@@ -12,6 +12,7 @@ PySide6 + SQLAlchemy (PostgreSQL) — стабильная версия:
 # ===== Base =====
 import sys
 import faulthandler
+import os
 
 faulthandler.enable()
 
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import QApplication
 
 # ===== Files =====
 from templates.MainWindow import MainWindow
+from styles.styles import connect_styles
 
 
 
@@ -32,6 +34,7 @@ from templates.MainWindow import MainWindow
 # -------------------------------
 def main():
     app = QApplication(sys.argv)
+    connect_styles(app)
     win = MainWindow()
     win.show()
     sys.exit(app.exec())
