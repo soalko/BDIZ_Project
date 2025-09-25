@@ -8,25 +8,18 @@ PySide6 + SQLAlchemy (PostgreSQL) — стабильная версия:
 - Вместо parent().parent() используем self.window() для доступа к MainWindow.
 """
 
-
 # ===== Base =====
 import sys
 import faulthandler
-import os
 
 faulthandler.enable()
-
 
 # ===== PySide6 =====
 from PySide6.QtWidgets import QApplication
 
-
 # ===== Files =====
 from templates.MainWindow import MainWindow
 from styles.styles import connect_styles
-
-
-
 
 
 # -------------------------------

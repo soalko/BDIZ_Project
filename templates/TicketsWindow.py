@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QFormLayout, QLineEdit, QPushButton, QMessageBox,
     QComboBox, QCheckBox, QTableView
 )
+from styles.styles import apply_compact_table_view
 
 
 # ===== SQLAlchemy =====
@@ -59,6 +60,7 @@ class TicketsTab(QWidget):
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.table)
 
         # Основной layout
         layout = QVBoxLayout(self)

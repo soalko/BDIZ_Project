@@ -2,8 +2,10 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
-    QComboBox, QTextEdit, QGroupBox
+    QComboBox, QTextEdit, QGroupBox, QSpacerItem, QSizePolicy
 )
+from PySide6.QtCore import Qt
+from styles.styles import switch_theme, get_current_theme
 
 
 # ===== SQLAlchemy =====
@@ -69,17 +71,46 @@ class SetupTab(QWidget):
         self.demo_btn.setEnabled(False)
         self.demo_btn.clicked.connect(self.add_demo)
 
+        # Переключатель темы
+        self.theme_btn = QPushButton("Светлая тема")
+        self.theme_btn.clicked.connect(self.toggle_theme)
+
         top_btns = QHBoxLayout()
         top_btns.addWidget(self.connect_btn)
         top_btns.addWidget(self.disconnect_btn)
+        top_btns.addStretch()
+        top_btns.addWidget(self.theme_btn)
 
+        # Компактный левый верхний блок: уменьшаем ширину примерно вдвое
         layout = QVBoxLayout(self)
-        layout.addWidget(conn_box)
+        layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+
+        # Ограничим максимальную ширину бокса и сделаем лог сжимаемым
+        conn_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        conn_box.setMaximumWidth(520)
+
+        layout.addWidget(conn_box, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
         layout.addLayout(top_btns)
         layout.addWidget(self.create_btn)
         layout.addWidget(self.demo_btn)
         layout.addWidget(QLabel("Лог:"))
         layout.addWidget(self.log)
+
+        # Инициализируем текст на кнопке темы согласно текущей теме
+        self._sync_theme_button_text()
+
+    def _sync_theme_button_text(self):
+        theme = get_current_theme()
+        if theme == "light":
+            self.theme_btn.setText("Тёмная тема")
+        else:
+            self.theme_btn.setText("Светлая тема")
+
+    def toggle_theme(self):
+        theme = get_current_theme()
+        new_theme = "dark" if theme == "light" else "light"
+        switch_theme(new_theme)
+        self._sync_theme_button_text()
 
     def current_cfg(self) -> PgConfig:
         try:
@@ -146,3 +177,4 @@ class SetupTab(QWidget):
             main.refresh_combos()
         else:
             QMessageBox.warning(self, "Демо", "Часть данных не добавлена. См. консоль.")
+

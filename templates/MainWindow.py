@@ -1,12 +1,10 @@
 # ===== Base =====
 from typing import Optional, Dict
 
-
 # ===== PySide6 =====
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QTabWidget
 )
-
 
 # ===== SQLAlchemy =====
 from sqlalchemy import (
@@ -14,7 +12,6 @@ from sqlalchemy import (
 )
 
 from sqlalchemy.engine import Engine
-
 
 # ===== Files =====
 from templates.AircraftWindow import AircraftTab
@@ -24,7 +21,6 @@ from templates.FlightsWindow import FlightsTab
 from templates.PassangersWindow import PassengersTab
 from templates.SetupWindow import SetupTab
 from templates.TicketsWindow import TicketsTab
-
 
 
 # -------------------------------
@@ -41,7 +37,15 @@ class MainWindow(QMainWindow):
         self.tables: Optional[Dict[str, Table]] = None
 
         self.tabs = QTabWidget()
-        self.setup_tab = SetupTab(self.tabs)
+        try:
+            self.tabs.setMovable(True)
+        except Exception:
+            try:
+                self.tabs.tabBar().setMovable(True)
+            except Exception:
+                pass
+
+        self.setup_tab = SetupTab()
         self.tabs.addTab(self.setup_tab, "Подключение и схема БД")
 
         self.aircraft_tab: Optional[AircraftTab] = None
@@ -57,84 +61,97 @@ class MainWindow(QMainWindow):
         self.engine = engine
         self.md = md
         self.tables = tables
+        print(f"Engine attached: {engine}")  # Debug
 
     def ensure_data_tabs(self):
         if self.engine is None or self.tables is None:
+            print("No engine or tables available")  # Debug
             return
 
+        print("Creating data tabs...")  # Debug
+
         if self.aircraft_tab is None:
-            self.aircraft_tab = AircraftTab(self.engine, self.tables, self.tabs)
+            self.aircraft_tab = AircraftTab(self.engine, self.tables)
             self.tabs.addTab(self.aircraft_tab, "Самолеты")
+            print("Aircraft tab created")  # Debug
+
         if self.flights_tab is None:
-            self.flights_tab = FlightsTab(self.engine, self.tables, self.tabs)
+            self.flights_tab = FlightsTab(self.engine, self.tables)
             self.tabs.addTab(self.flights_tab, "Рейсы")
+            print("Flights tab created")  # Debug
+
         if self.passengers_tab is None:
-            self.passengers_tab = PassengersTab(self.engine, self.tables, self.tabs)
+            self.passengers_tab = PassengersTab(self.engine, self.tables)
             self.tabs.addTab(self.passengers_tab, "Пассажиры")
+            print("Passengers tab created")  # Debug
+
         if self.tickets_tab is None:
-            self.tickets_tab = TicketsTab(self.engine, self.tables, self.tabs)
+            self.tickets_tab = TicketsTab(self.engine, self.tables)
             self.tabs.addTab(self.tickets_tab, "Билеты")
+            print("Tickets tab created")  # Debug
+
         if self.crew_tab is None:
-            self.crew_tab = CrewTab(self.engine, self.tables, self.tabs)
+            self.crew_tab = CrewTab(self.engine, self.tables)
             self.tabs.addTab(self.crew_tab, "Экипажи")
+            print("Crew tab created")  # Debug
+
         if self.crew_members_tab is None:
-            self.crew_members_tab = CrewMembersTab(self.engine, self.tables, self.tabs)
+            self.crew_members_tab = CrewMembersTab(self.engine, self.tables)
             self.tabs.addTab(self.crew_members_tab, "Члены экипажа")
+            print("Crew members tab created")  # Debug
 
         self.refresh_combos()
 
     def refresh_all_models(self):
-        if self.aircraft_tab:
-            self.aircraft_tab.model.refresh()
-        if self.flights_tab:
-            self.flights_tab.model.refresh()
-        if self.passengers_tab:
-            self.passengers_tab.model.refresh()
-        if self.tickets_tab:
-            self.tickets_tab.model.refresh()
-        if self.crew_tab:
-            self.crew_tab.model.refresh()
-        if self.crew_members_tab:
-            self.crew_members_tab.model.refresh()
+        tabs = [
+            self.aircraft_tab, self.flights_tab, self.passengers_tab,
+            self.tickets_tab, self.crew_tab, self.crew_members_tab
+        ]
+
+        for tab in tabs:
+            if tab and hasattr(tab, 'model'):
+                tab.model.refresh()
+                print(f"Refreshed model for {tab.__class__.__name__}")  # Debug
 
     def refresh_combos(self):
-        if self.flights_tab:
+        if self.flights_tab and hasattr(self.flights_tab, 'refresh_aircraft_combo'):
             self.flights_tab.refresh_aircraft_combo()
-        if self.tickets_tab:
+        if self.tickets_tab and hasattr(self.tickets_tab, 'refresh_flights_combo'):
             self.tickets_tab.refresh_flights_combo()
+        if self.tickets_tab and hasattr(self.tickets_tab, 'refresh_passengers_combo'):
             self.tickets_tab.refresh_passengers_combo()
-        if self.crew_tab:
+        if self.crew_tab and hasattr(self.crew_tab, 'refresh_aircraft_combo'):
             self.crew_tab.refresh_aircraft_combo()
-        if self.crew_members_tab:
+        if self.crew_members_tab and hasattr(self.crew_members_tab, 'refresh_crew_combo'):
             self.crew_members_tab.refresh_crew_combo()
 
     def disconnect_db(self):
-        # убрать вкладки (уничтожит модели)
+        # убрать вкладки
         tabs_to_remove = [
-            "aircraft_tab", "flights_tab", "passengers_tab",
-            "tickets_tab", "crew_tab", "crew_members_tab"
+            self.aircraft_tab, self.flights_tab, self.passengers_tab,
+            self.tickets_tab, self.crew_tab, self.crew_members_tab
         ]
 
-        for attr in tabs_to_remove:
-            tab = getattr(self, attr)
+        for tab in tabs_to_remove:
             if tab is not None:
                 idx = self.tabs.indexOf(tab)
                 if idx != -1:
                     self.tabs.removeTab(idx)
                 tab.deleteLater()
-                setattr(self, attr, None)
 
-        QApplication.processEvents()
+        # обнуляем ссылки
+        self.aircraft_tab = None
+        self.flights_tab = None
+        self.passengers_tab = None
+        self.tickets_tab = None
+        self.crew_tab = None
+        self.crew_members_tab = None
 
         # закрыть engine
         if self.engine is not None:
             self.engine.dispose()
-        self.engine = None;
-        self.md = None;
+        self.engine = None
+        self.md = None
         self.tables = None
 
-        # кнопки в состояние "нет подключения"
-        self.setup_tab.connect_btn.setEnabled(True)
-        self.setup_tab.disconnect_btn.setEnabled(False)
-        self.setup_tab.create_btn.setEnabled(False)
-        self.setup_tab.demo_btn.setEnabled(False)
+        QApplication.processEvents()

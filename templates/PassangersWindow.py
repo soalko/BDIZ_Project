@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QFormLayout, QPushButton, QMessageBox,
     QCheckBox, QTableView
 )
+from styles.styles import apply_compact_table_view
 
 
 # ===== SQLAlchemy =====
@@ -52,6 +53,7 @@ class PassengersTab(QWidget):
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.table)
 
         # Основной layout
         layout = QVBoxLayout(self)

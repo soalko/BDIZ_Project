@@ -5,19 +5,14 @@ from PySide6.QtWidgets import (
     QFormLayout, QLineEdit, QPushButton,
     QMessageBox, QSpinBox, QTableView
 )
-
+from styles.styles import apply_compact_table_view
 
 # ===== SQLAlchemy =====
-from sqlalchemy import (
-    insert, delete
-)
-
+from sqlalchemy import insert, delete
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
 
 # ===== Files =====
 from db.models import SATableModel
-
 
 
 # -------------------------------
@@ -66,6 +61,7 @@ class AircraftTab(QWidget):
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.table)
 
         # Основной layout
         layout = QVBoxLayout(self)
