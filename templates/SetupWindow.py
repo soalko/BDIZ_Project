@@ -57,6 +57,7 @@ class SetupTab(QWidget):
 
         self.connect_btn = QPushButton("Подключиться")
         self.connect_btn.clicked.connect(self.do_connect)
+
         self.disconnect_btn = QPushButton("Отключиться")
         self.disconnect_btn.setEnabled(False)
         self.disconnect_btn.clicked.connect(self.do_disconnect)
@@ -121,6 +122,10 @@ class SetupTab(QWidget):
     def do_disconnect(self):
         main = self.window()  # <-- было parent().parent()
         main.disconnect_db()
+        self.connect_btn.setEnabled(True)
+        self.disconnect_btn.setEnabled(False)
+        self.create_btn.setEnabled(False)
+        self.demo_btn.setEnabled(False)
         self.log.append("Соединение закрыто.")
 
     def reset_db(self):
