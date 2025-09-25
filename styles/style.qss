@@ -1,4 +1,5 @@
 /* ===== ОСНОВНЫЕ СТИЛИ ===== */
+
 QMainWindow, QWidget, QDialog {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                               stop: 0 #0b0c12,
@@ -50,6 +51,7 @@ QPushButton {
     font-weight: 600;
     font-size: 12px;
     margin: 3px;
+    min-weight: 100px;
 }
 
 QPushButton:hover {
@@ -82,7 +84,8 @@ QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
                               stop: 0 #0f111a, stop: 1 #141726);
     border: 2px solid #3a3e55;
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 8px 10px;
+    min-height: 30px;
     color: #cdd6f4;
     font-size: 13px;
     selection-background-color: #89b4fa;
@@ -213,12 +216,14 @@ QTableView::item {
 
 QTableView::item:hover {
     background-color: #313244;
+    border-radius: 6px;
 }
 
 QTableView::item:selected {
     background-color: #89b4fa;
     color: #1e1e2e;
     font-weight: 600;
+    border-radius: 6px;
 }
 
 QHeaderView::section {
@@ -262,10 +267,10 @@ QTableView::item:selected {
     color: #0f1410;
     border-radius: 6px;
 }
-QTableView::item:selected {
-    background-color: #89b4fa;
-    color: #1e1e2e;
-    border-radius: 6px;
+
+QHeaderView::section:checked {
+    background: #3f8cff;
+    color: #ffffff;
 }
 
 QHeaderView::section:checked {
@@ -345,10 +350,10 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 
 QScrollBar:horizontal {
     border: none;
-    background-color: #181825;
-    height: 14px;
-    margin: 2px;
     border-radius: 7px;
+    background-color: #181825;
+    min-width: 30px;
+    margin: 2px;
 }
 
 QScrollBar::handle:horizontal {
@@ -372,6 +377,38 @@ QFormLayout {
     spacing: 10px;
     margin: 12px;
 }
+
+
+
+/* ===== ЛОГ И СООБЩЕНИЯ ===== */
+QTextEdit {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                              stop: 0 #f7f8fb, stop: 1 #eef2f8);
+    border: 1px solid #d7dbe6;
+    border-radius: 8px;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    color: #4a5160;
+    padding: 10px;
+}
+QTextEdit:focus { border: 1px solid #8EB2E7; }
+
+QLabel[status="success"] {
+    color: #0d7a4a; font-weight: 600; background-color: rgba(24, 182, 113, 0.1);
+    padding: 8px; border-radius: 6px; border: 1px solid #18b671;
+}
+QLabel[status="error"] {
+    color: #9f1d22; font-weight: 600; background-color: rgba(226, 85, 90, 0.1);
+    padding: 8px; border-radius: 6px; border: 1px solid #e2555a;
+}
+QLabel[status="warning"] {
+    color: #9b5a00; font-weight: 600; background-color: rgba(255, 171, 16, 0.12);
+    padding: 8px; border-radius: 6px; border: 1px solid #ffab10;
+}
+
+QMessageBox { background-color: #f7f8fb; color: #2b2f38; }
+QMessageBox QLabel { color: #2b2f38; font-size: 13px; }
+QMessageBox QPushButton { min-width: 80px; }
 
 /* ===== АНИМАЦИИ ===== */
 QPushButton, QLineEdit, QComboBox, QSpinBox, QDateEdit, QTimeEdit, QCheckBox {
