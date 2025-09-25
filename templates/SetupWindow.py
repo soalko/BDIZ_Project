@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from styles.styles import switch_theme, get_current_theme
 
 
-# ===== SQLAlchemy =====
+# ===== SQLAlchemy ======
 from sqlalchemy.exc import SQLAlchemyError
 
 

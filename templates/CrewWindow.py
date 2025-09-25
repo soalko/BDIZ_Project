@@ -22,7 +22,7 @@ from db.models import SATableModel
 
 # -------------------------------
 # Вкладка «Экипаж»
-# -------------------------------
+# --------------------------------
 class CrewTab(QWidget):
     def __init__(self, engine, tables, parent=None):
         super().__init__(parent)

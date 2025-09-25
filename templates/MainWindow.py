@@ -139,7 +139,7 @@ class MainWindow(QMainWindow):
                     self.tabs.removeTab(idx)
                 tab.deleteLater()
 
-        # обнуляем ссылки
+        #  обнуляем ссылки
         self.aircraft_tab = None
         self.flights_tab = None
         self.passengers_tab = None

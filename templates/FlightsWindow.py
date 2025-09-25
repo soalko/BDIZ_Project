@@ -26,7 +26,7 @@ from db.models import SATableModel
 
 # -------------------------------
 # Вкладка «Рейсы»
-# -------------------------------
+# --------------------------------
 class FlightsTab(QWidget):
     def __init__(self, engine, tables, parent=None):
         super().__init__(parent)

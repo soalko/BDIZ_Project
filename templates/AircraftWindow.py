@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 )
 from styles.styles import apply_compact_table_view
 
-# ===== SQLAlchemy =====
+# ===== SQLAlchemy ======
 from sqlalchemy import insert, delete
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 

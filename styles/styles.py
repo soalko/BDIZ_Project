@@ -4,7 +4,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QHeaderView
 
 # Текущая тема по умолчанию
-_current_theme = "dark"  # можно "light" или "dark"
+_current_theme = "dark"  # можно  "light" или "dark"
 
 def _qss_path_for(theme: str) -> str:
     base = os.path.dirname(__file__)

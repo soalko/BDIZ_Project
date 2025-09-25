@@ -24,7 +24,7 @@ from styles.styles import connect_styles
 
 # -------------------------------
 # Точка входа
-# -------------------------------
+# --------------------------------
 def main():
     app = QApplication(sys.argv)
     connect_styles(app)

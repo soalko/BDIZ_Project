@@ -389,7 +389,7 @@ QPushButton:focus {
     animation: pulse 1.5s infinite;
 }
 
-/* Эффект появления для новых элементов */
+/* Эффект  появления для новых элементов */
 QTableView::item {
     transition: all 0.3s ease;
 }
