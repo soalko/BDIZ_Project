@@ -33,7 +33,7 @@ from templates.TicketsWindow import TicketsTab
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("PySide6 + SQLAlchemy: CREATE/INSERT/CHECK/UNIQUE/PK/FK")
+        self.setWindowTitle("Airport Database Management System")
         self.resize(1100, 740)
 
 
