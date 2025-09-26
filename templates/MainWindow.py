@@ -1,10 +1,14 @@
 # ===== Base =====
 from typing import Optional, Dict
+import os
+from typing import Optional, Dict
 
 # ===== PySide6 =====
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QTabWidget
 )
+from PySide6.QtGui import QPalette, QBrush, QPixmap
+from PySide6.QtCore import Qt
 
 # ===== SQLAlchemy =====
 from sqlalchemy import (
@@ -32,6 +36,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PySide6 + SQLAlchemy: CREATE/INSERT/CHECK/UNIQUE/PK/FK")
         self.resize(1100, 740)
 
+
         self.engine: Optional[Engine] = None
         self.md: Optional[MetaData] = None
         self.tables: Optional[Dict[str, Table]] = None
@@ -57,11 +62,13 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.tabs)
 
+
     def attach_engine(self, engine: Engine, md: MetaData, tables: Dict[str, Table]):
         self.engine = engine
         self.md = md
         self.tables = tables
         print(f"Engine attached: {engine}")  # Debug
+
 
     def ensure_data_tabs(self):
         if self.engine is None or self.tables is None:

@@ -2,13 +2,36 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
-    QComboBox, QTextEdit, QGroupBox, QSpacerItem, QSizePolicy
+    QComboBox, QTextEdit, QGroupBox, QSpacerItem, QSizePolicy,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QPalette, QPixmap
+
 from styles.styles import switch_theme, get_current_theme
 
-
 # ===== SQLAlchemy ======
+from sqlalchemy.exc import SQLAlchemyError
+
+# ===== Files =====
+from db.config import PgConfig
+from db.session import (
+    make_engine
+)
+from db.models import (
+    build_metadata, insert_demo_data_sa, drop_and_create_schema_sa
+)
+
+
+# -------------------------------
+# ===== PySide6 =====
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout,
+    QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
+    QComboBox, QTextEdit, QGroupBox
+)
+
+
+# ===== SQLAlchemy =====
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -81,15 +104,9 @@ class SetupTab(QWidget):
         top_btns.addStretch()
         top_btns.addWidget(self.theme_btn)
 
-        # Компактный левый верхний блок: уменьшаем ширину примерно вдвое
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
-        # Ограничим максимальную ширину бокса и сделаем лог сжимаемым
-        conn_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        conn_box.setMaximumWidth(520)
-
-        layout.addWidget(conn_box, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
+        layout.addWidget(conn_box, 0)
         layout.addLayout(top_btns)
         layout.addWidget(self.create_btn)
         layout.addWidget(self.demo_btn)
@@ -177,4 +194,3 @@ class SetupTab(QWidget):
             main.refresh_combos()
         else:
             QMessageBox.warning(self, "Демо", "Часть данных не добавлена. См. консоль.")
-
