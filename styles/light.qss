@@ -64,13 +64,11 @@ QPushButton:hover {
                               stop: 0 #4465F0,
                               stop: 1 #DACCF5);
     border: 2px solid #CEE9F7;
-    box-shadow: 0 10px 26px rgba(122, 95, 176, 0.3);
 }
 
 QPushButton:focus {
     outline: none;
     border: 2px solid #01011E;
-    box-shadow: 0 0 0 3px rgba(168, 144, 208, 0.3);
 }
 
 QPushButton:pressed {
@@ -97,14 +95,12 @@ QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
     font-size: 13px;
     selection-background-color:#CEE9F7;
     selection-color: #ffffff;
-    transition: all 0.3s ease;
 }
 
 QLineEdit:focus, QSpinBox:focus, QDateEdit:focus,
 QTimeEdit:focus, QComboBox:focus, QTextEdit:focus {
     border: 2px solid #CEE9F7;
     background: #FFFFFF;
-    box-shadow: 0 0 0 3px rgba(156, 123, 216, 0.1);
 }
 
 QComboBox {
@@ -152,7 +148,7 @@ QTimeEdit::up-button, QTimeEdit::down-button {
     border: 1px solid #e1e5e9;
     width: 20px;
     border-radius: 8px;
-    margin: -1px;
+    margin: 1px;
 }
 
 QSpinBox::up-button:hover, QSpinBox::down-button:hover,
@@ -175,6 +171,7 @@ QSpinBox::down-arrow {
 
 /* ===== ЧЕКБОКСЫ ===== */
 QCheckBox {
+    background: transparent;
     spacing: 10px;
     color: #3a3f4b;
     font-weight: 500;
@@ -186,7 +183,6 @@ QCheckBox::indicator {
     border: 2px solid #cfd5e2;
     border-radius: 4px;
     background-color: #ffffff;
-    transition: all 0.2s ease;
 }
 
 QCheckBox::indicator:hover {
@@ -220,7 +216,6 @@ QTableView {
 QTableView::item {
     padding: 10px;
     border-bottom: 1px solid #eef1f7;
-    transition: background-color 0.2s ease;
 }
 
 QTableView::item:hover {
@@ -301,7 +296,6 @@ QTabBar::tab {
     border-top-right-radius: 8px;
     border: 2px solid #d7dbe6;
     border-bottom: none;
-    transition: all 0.3s ease;
     font-weight: 500;
 }
 
@@ -333,7 +327,6 @@ QScrollBar::handle:vertical {
     border-radius: 7px;
     min-height: 30px;
     margin: 2px;
-    transition: background-color 0.2s ease;
 }
 
 QScrollBar::handle:vertical:hover {
@@ -358,7 +351,6 @@ QScrollBar::handle:horizontal {
     border-radius: 7px;
     min-width: 30px;
     margin: 2px;
-    transition: background-color 0.2s ease;
 }
 
 QScrollBar::handle:horizontal:hover {
