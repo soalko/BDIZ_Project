@@ -26,7 +26,7 @@ QLabel {
 QGroupBox {
     font-weight: 600;
     font-size: 13px;
-    border: 1px solid #d7dbe6;
+    border: 2px solid #d7dbe6;
     border-radius: 10px;
     margin-top: 12px;
     padding-top: 18px;
@@ -51,7 +51,7 @@ QPushButton {
     border: 2px solid #6699FF; /* тёмная обводка */
     border-radius: 8px;
     color: #000000;
-    padding: 9px 18px;
+    padding: 10px 20px;
     font-weight: 600;
     font-size: 12px;
     margin: 3px;
@@ -70,11 +70,14 @@ QPushButton:focus {
     box-shadow: 0 0 0 3px rgba(168, 144, 208, 0.3);
 }
 
-QPushButton:pressed { background: #FFCCFF; padding: 10px 17px 8px 19px; }
+QPushButton:pressed {
+background: #FFCCFF;
+padding: 11px 19px 9px 21px;
+}
 
 QPushButton:disabled {
     background: #e0e4ee;
-    border: 1px solid #d1d7e6;
+    border: 2px solid #d1d7e6;
     color: #595B60;
 }
 
@@ -84,8 +87,8 @@ QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
     background: #FFFFFF;
     border: 2px solid #8A9CF6;
     border-radius: 8px;
-    padding: 8px 12px;
-    min-height: 32px;
+    padding: 8px 10px;
+    min-height: 23px;
     color: #000000;
     font-size: 13px;
     selection-background-color:#CEE9F7;
@@ -132,7 +135,7 @@ QComboBox::down-arrow {
     border-top: 5px solid #718096;
     width: 0;
     height: 0;
-    margin-right: 8px;
+    margin-right: -1px;
 }
 
 QComboBox QAbstractItemView {
@@ -142,7 +145,7 @@ QComboBox QAbstractItemView {
     selection-background-color: #FFFFFF;
     selection-color: #ffffff;
     outline: none;
-    margin: 2px 0 0 0;
+    margin: 2px;
 }
 
 QComboBox QAbstractItemView::item {
@@ -151,7 +154,7 @@ QComboBox QAbstractItemView::item {
 }
 
 QComboBox QAbstractItemView::item:selected {
-    background-color: #CCFFCC;
+    background-color: #A1B2F0;
     color: #000000;
 }
 
@@ -163,7 +166,7 @@ QTimeEdit::up-button, QTimeEdit::down-button {
     border: 1px solid #e1e5e9;
     width: 20px;
     border-radius: 4px;
-    margin: 1px;
+    margin: -1px;
 }
 
 QSpinBox::up-button:hover, QSpinBox::down-button:hover,
@@ -178,7 +181,7 @@ QSpinBox::up-arrow {
     border-bottom: 5px solid #718096;
     width: 0;
     height: 0;
-    margin-bottom: 1px;
+    margin-bottom: 4px;
 }
 
 QSpinBox::down-arrow {
@@ -198,14 +201,14 @@ QLineEdit[placeholderText]:focus {
 QCheckBox { spacing: 10px; color: #3a3f4b; font-weight: 500; }
 QCheckBox::indicator {
     width: 18px; height: 18px;
-    border: 1px solid #cfd5e2;
+    border: 2px solid #cfd5e2;
     border-radius: 4px;
     background-color: #ffffff;
 }
 QCheckBox::indicator:hover { border: 1px solid #00CCFF; background-color: #f1f5ff; }
 QCheckBox::indicator:checked {
     background-color: #18b671;
-    border: 1px solid #18b671;
+    border: 2px solid #18b671;
 
 }
 
@@ -317,6 +320,12 @@ QScrollBar:horizontal { border: none; background-color: #f0f2f8; height: 14px; m
 QScrollBar::handle:horizontal { background-color: #cfd5e2; border-radius: 7px; min-width: 30px; margin: 2px; }
 QScrollBar::handle:horizontal:hover { background-color: #9fb2de; }
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }
+
+/* ===== ФОРМЫ ===== */
+QFormLayout {
+    spacing: 10px;
+    margin: 12px;
+}
 
 /* ===== ЛОГ И СООБЩЕНИЯ ===== */
 QTextEdit {

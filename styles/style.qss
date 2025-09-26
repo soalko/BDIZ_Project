@@ -133,7 +133,7 @@ QComboBox QAbstractItemView {
 }
 
 QComboBox QAbstractItemView::item {
-    padding: 8px;
+    padding: 8px 12px;
     border-bottom: 1px solid #01011E;
 }
 
@@ -150,6 +150,7 @@ QTimeEdit::up-button, QTimeEdit::down-button {
     border: 1px solid #01011E;
     width: 22px;
     border-radius: 4px;
+    margin: -1px;
 }
 
 QSpinBox::up-button:hover, QSpinBox::down-button:hover,
