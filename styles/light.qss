@@ -3,11 +3,13 @@
 QMainWindow, QWidget, QDialog {
     /* Серебряный, более выраженный градиент */
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #f5f6f8,
-                              stop: 0.35 #eceef2,
-                              stop: 0.7 #dde1e8,
-                              stop: 1 #cfd4dc);
-    color: #2b2f38;
+                          stop: 0 #8A9CF6,
+                          stop: 0.6 #4465F0, /* Дольше сохраняем синий оттенок */
+                          stop: 0.6 #B5BDF8,
+                          stop: 0.8 #E6E8FE,
+                          stop: 1 #FFFFFF);
+
+    color: #000000;
     font-family: 'Segoe UI', 'Roboto', sans-serif;
     font-size: 13px;
     border: none;
@@ -15,7 +17,7 @@ QMainWindow, QWidget, QDialog {
 
 /* ===== ТЕКСТ И ГРУППЫ ===== */
 QLabel {
-    color: #3a3f4b;
+    color: #000000;
     font-weight: 500;
     padding: 3px;
     background: transparent;
@@ -29,26 +31,26 @@ QGroupBox {
     margin-top: 12px;
     padding-top: 18px;
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #f2f4f8, stop: 1 #e9edf4);
-    color: #4a5160;
+                              stop: 1 #FF99FF, stop: 0 #b8daff);
+    color: #FFFFFF;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top center;
     padding: 0 12px;
-    background-color: transparent;
-    color: #1b63c6;
+    background-color: #b8daff ;
+    color: #000000;
 }
 
 /* ===== КНОПКИ (единый цвет) ===== */
 QPushButton {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 rgba(140, 195, 255, 0.28),
-                              stop: 1 rgba(63, 140, 255, 0.22));
-    border: 1px solid rgba(63, 140, 255, 0.35);
+                              stop: 0 #b8daff,
+                              stop: 1 #b8daff);
+    border: 2px solid #6699FF; /* тёмная обводка */
     border-radius: 8px;
-    color: #183152;
+    color: #000000;
     padding: 9px 18px;
     font-weight: 600;
     font-size: 12px;
@@ -57,100 +59,141 @@ QPushButton {
 
 QPushButton:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 rgba(255, 214, 224, 0.28),
-                              stop: 1 rgba(255, 196, 210, 0.26));
-    border-color: rgba(255, 196, 210, 0.45);
-    box-shadow: 0 10px 26px rgba(255, 196, 210, 0.35);
+                              stop: 0 #4465F0,
+                              stop: 1 #DACCF5);
+    border: 2px solid #CEE9F7;
+    box-shadow: 0 5px 15px rgba(122, 95, 176, 0.3);
 }
 
 QPushButton:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(255, 182, 106, 0.45);
+    box-shadow: 0 0 0 3px rgba(168, 144, 208, 0.3);
 }
 
-QPushButton:pressed { background: #2b74ef; padding: 10px 17px 8px 19px; }
+QPushButton:pressed { background: #FFCCFF; padding: 10px 17px 8px 19px; }
 
 QPushButton:disabled {
     background: #e0e4ee;
     border: 1px solid #d1d7e6;
-    color: #9aa3b2;
+    color: #595B60;
 }
 
 /* ===== ПОЛЯ ВВОДА ===== */
+/* ===== КРАСИВЫЕ ПОЛЯ ВВОДА ===== */
 QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #f5f6f8, stop: 1 #eef2f8);
-    border: 1px solid #cfd5e2;
+    background: #FFFFFF;
+    border: 2px solid #8A9CF6;
     border-radius: 8px;
-    padding: 6px 10px;
-    min-height: 30px;
-    color: #2b2f38;
+    padding: 8px 12px;
+    min-height: 32px;
+    color: #000000;
     font-size: 13px;
-    selection-background-color: #3f8cff;
+    selection-background-color:#CEE9F7;
     selection-color: #ffffff;
 }
 
 QLineEdit:focus, QSpinBox:focus, QDateEdit:focus,
 QTimeEdit:focus, QComboBox:focus, QTextEdit:focus {
-    border: 1px solid #3f8cff;
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #f0f3f8, stop: 1 #e6ebf5);
-    box-shadow: 0 0 0 3px rgba(63, 140, 255, 0.16);
+    border: 2px solid #CEE9F7;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(156, 123, 216, 0.1);
 }
 
-QComboBox { padding-right: 30px; }
+QLineEdit:hover, QComboBox:hover, QSpinBox:hover,
+QDateEdit:hover, QTimeEdit:hover {
+    border: 2px solid #cbd5e0;
+    background: #fafafa;
+}
+
+/* Стили для выпадающего списка ComboBox */
+QComboBox {
+    padding-right: 30px;
+    background: #FFFFFF;
+}
 
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
-    width: 25px;
-    border-left: 1px solid #d7dbe6;
+    width: 30px;
+    border-left: 2px solid #CCCCFF;
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #eef1f7, stop: 1 #e3e7f1);
+    background: #FFFFFF;
+}
+
+QComboBox::drop-down:hover {
+    background: #edf2f7;
 }
 
 QComboBox::down-arrow {
-
-    width: 12px;
-    height: 12px;
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #718096;
+    width: 0;
+    height: 0;
+    margin-right: 8px;
 }
 
 QComboBox QAbstractItemView {
-    background-color: #f7f8fb;
-    border: 1px solid #d7dbe6;
+    background-color: #ffffff;
+    border: 2px solid #e1e5e9;
     border-radius: 8px;
-    selection-background-color: #e3ebff;
+    selection-background-color: #FFFFFF;
     selection-color: #ffffff;
     outline: none;
+    margin: 2px 0 0 0;
 }
 
-QComboBox QAbstractItemView::item { padding: 8px; }
+QComboBox QAbstractItemView::item {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f7fafc;
+}
+
 QComboBox QAbstractItemView::item:selected {
-    background-color: #3f8cff;
-    color: #ffffff;
+    background-color: #CCFFCC;
+    color: #000000;
 }
 
+/* Стили для числовых полей */
 QSpinBox::up-button, QSpinBox::down-button,
 QDateEdit::up-button, QDateEdit::down-button,
 QTimeEdit::up-button, QTimeEdit::down-button {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #eef1f7, stop: 1 #e3e7f1);
-    border: 1px solid #d7dbe6;
-    width: 22px;
+    background: #f7fafc;
+    border: 1px solid #e1e5e9;
+    width: 20px;
     border-radius: 4px;
+    margin: 1px;
+}
+
+QSpinBox::up-button:hover, QSpinBox::down-button:hover,
+QDateEdit::up-button:hover, QDateEdit::down-button:hover,
+QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
+    background: #edf2f7;
 }
 
 QSpinBox::up-arrow {
-
-    width: 8px; height: 8px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 5px solid #718096;
+    width: 0;
+    height: 0;
+    margin-bottom: 1px;
 }
+
 QSpinBox::down-arrow {
-
-    width: 8px; height: 8px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #718096;
+    width: 0;
+    height: 0;
+    margin-top: 1px;
 }
 
+/* Placeholder текст */
+QLineEdit[placeholderText]:focus {
+    color: #2d3748;
+}
 /* ===== ЧЕКБОКСЫ ===== */
 QCheckBox { spacing: 10px; color: #3a3f4b; font-weight: 500; }
 QCheckBox::indicator {
@@ -159,7 +202,7 @@ QCheckBox::indicator {
     border-radius: 4px;
     background-color: #ffffff;
 }
-QCheckBox::indicator:hover { border: 1px solid #3f8cff; background-color: #f1f5ff; }
+QCheckBox::indicator:hover { border: 1px solid #00CCFF; background-color: #f1f5ff; }
 QCheckBox::indicator:checked {
     background-color: #18b671;
     border: 1px solid #18b671;
@@ -169,11 +212,10 @@ QCheckBox::indicator:checked {
 /* ===== ТАБЛИЦЫ ===== */
 QTableView {
     /* Серебристый фон таблиц, заметный градиент */
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #f7f8fa,
-                              stop: 0.5 #e6eaf0,
-                              stop: 1 #d3d9e2);
-    border: 1px solid #d7dbe6;
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                              stop: 0 #b8daff,
+                              stop: 1 #CAB6EE);
+    border: 2px solid #6666FF;
     border-radius: 10px;
     gridline-color: #e4e7f0;
     selection-background-color: rgba(24, 182, 113, 0.22);
@@ -188,10 +230,10 @@ QTableView {
 
 QHeaderView::section {
     /* Металлическая шапка таблицы */
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                              stop: 0 #f2f3f6,
-                              stop: 1 #dfe3ea);
-    color: #1b63c6;
+        background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                              stop: 0 #DACCF5, stop: 1 #DACCF5 );
+
+    color: #000000;
     padding: 10px 12px;
     border: 1px solid #d7dbe6;
     font-weight: 600;
@@ -203,7 +245,7 @@ QHeaderView::section:first {
     border-top-left-radius: 10px;
 }
 QHeaderView::section:last {
-    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
 }
 
 /* Кнопка в левом верхнем углу таблицы */
@@ -218,18 +260,18 @@ QTableCornerButton::section {
 QTableView::item {
     border-bottom: 1px solid #eef1f7;
     padding: 6px 10px;
+
 }
 QTableView::item:hover {
-    background-color: rgba(24, 182, 113, 0.14); /* мягкий зелёный для лайт-темы */
+    background-color: rgba(112, 28, 237, 0.14); /* мягкий зелёный для лайт-темы */
     border-radius: 6px;
 }
 
 QTableView::item:selected {
-    background-color: rgba(24, 182, 113, 0.22); /* тот же зелёный, чуть насыщеннее при выборе */
+    background-color: rgba(112, 28, 237, 0.22); /* тот же зелёный, чуть насыщеннее при выборе */
     color: #1e2a1e;
     border-radius: 6px;
 }
-QHeaderView::section:checked { background: #3f8cff; color: #ffffff; }
 
 /* ===== ВКЛАДКИ ===== */
 QTabWidget::pane {
@@ -279,8 +321,8 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }
 /* ===== ЛОГ И СООБЩЕНИЯ ===== */
 QTextEdit {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #f7f8fb, stop: 1 #eef2f8);
-    border: 1px solid #d7dbe6;
+                              stop: 1 #b8daff, stop: 0 #b8daff);
+    border: 2px solid #8A9CF6;
     border-radius: 8px;
     font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
     font-size: 11px;
