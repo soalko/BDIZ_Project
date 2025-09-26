@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QFormLayout, QLineEdit, QPushButton, QMessageBox, QSpinBox,
     QDateEdit, QComboBox, QTableView, QTimeEdit, QHeaderView
 )
+from styles.styles import apply_compact_table_view
 
 
 # ===== SQLAlchemy =====
@@ -25,7 +26,7 @@ from db.models import SATableModel
 
 # -------------------------------
 # Вкладка «Рейсы»
-# -------------------------------
+# --------------------------------
 class FlightsTab(QWidget):
     def __init__(self, engine, tables, parent=None):
         super().__init__(parent)
@@ -36,7 +37,7 @@ class FlightsTab(QWidget):
         # Создание виджетов для ввода данных
         self.aircraft_combo = QComboBox()
         self.departure_date_edit = QDateEdit()
-        self.departure_date_edit.setCalendarPopup(True)
+        self.departure_date_edit.setCalendarPopup(False)
         self.departure_date_edit.setDisplayFormat("yyyy-MM-dd")
         self.departure_date_edit.setDate(QDate.currentDate())
 
@@ -79,6 +80,7 @@ class FlightsTab(QWidget):
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.table)
 
         # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()

@@ -2,6 +2,31 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
+    QComboBox, QTextEdit, QGroupBox, QSpacerItem, QSizePolicy,
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QPalette, QPixmap
+
+from styles.styles import switch_theme, get_current_theme
+
+# ===== SQLAlchemy ======
+from sqlalchemy.exc import SQLAlchemyError
+
+# ===== Files =====
+from db.config import PgConfig
+from db.session import (
+    make_engine
+)
+from db.models import (
+    build_metadata, insert_demo_data_sa, drop_and_create_schema_sa
+)
+
+
+# -------------------------------
+# ===== PySide6 =====
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout,
+    QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
     QComboBox, QTextEdit, QGroupBox
 )
 
@@ -70,17 +95,40 @@ class SetupTab(QWidget):
         self.demo_btn.setEnabled(False)
         self.demo_btn.clicked.connect(self.add_demo)
 
+        # Переключатель темы
+        self.theme_btn = QPushButton("Светлая тема")
+        self.theme_btn.clicked.connect(self.toggle_theme)
+
         top_btns = QHBoxLayout()
         top_btns.addWidget(self.connect_btn)
         top_btns.addWidget(self.disconnect_btn)
+        top_btns.addStretch()
+        top_btns.addWidget(self.theme_btn)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(conn_box)
+
+        layout.addWidget(conn_box, 0)
         layout.addLayout(top_btns)
         layout.addWidget(self.create_btn)
         layout.addWidget(self.demo_btn)
         layout.addWidget(QLabel("Лог:"))
         layout.addWidget(self.log)
+
+        # Инициализируем текст на кнопке темы согласно текущей теме
+        self._sync_theme_button_text()
+
+    def _sync_theme_button_text(self):
+        theme = get_current_theme()
+        if theme == "light":
+            self.theme_btn.setText("Тёмная тема")
+        else:
+            self.theme_btn.setText("Светлая тема")
+
+    def toggle_theme(self):
+        theme = get_current_theme()
+        new_theme = "dark" if theme == "light" else "light"
+        switch_theme(new_theme)
+        self._sync_theme_button_text()
 
     def current_cfg(self) -> PgConfig:
         try:

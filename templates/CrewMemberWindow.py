@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QFormLayout, QLineEdit, QPushButton, QMessageBox,
     QComboBox, QTableView, QHeaderView
 )
+from styles.styles import apply_compact_table_view
 
 
 # ===== SQLAlchemy =====
@@ -54,6 +55,7 @@ class CrewMembersTab(QWidget):
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.table)
 
         # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
