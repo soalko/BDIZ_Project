@@ -24,9 +24,6 @@ from PySide6.QtWidgets import QApplication
 from templates.MainWindow import MainWindow
 
 
-
-
-
 # -------------------------------
 # Точка входа
 # -------------------------------

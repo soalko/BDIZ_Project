@@ -39,7 +39,7 @@ class SetupTab(QWidget):
         self.port_edit = QLineEdit("5432")
         self.db_edit = QLineEdit("airport")
         self.user_edit = QLineEdit("postgres")
-        self.pw_edit = QLineEdit("");
+        self.pw_edit = QLineEdit("")
         self.pw_edit.setEchoMode(QLineEdit.Password)
         self.ssl_edit = QLineEdit("prefer")
 
