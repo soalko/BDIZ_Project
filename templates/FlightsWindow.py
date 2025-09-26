@@ -37,7 +37,7 @@ class FlightsTab(QWidget):
         # Создание виджетов для ввода данных
         self.aircraft_combo = QComboBox()
         self.departure_date_edit = QDateEdit()
-        self.departure_date_edit.setCalendarPopup(True)
+        self.departure_date_edit.setCalendarPopup(False)
         self.departure_date_edit.setDisplayFormat("yyyy-MM-dd")
         self.departure_date_edit.setDate(QDate.currentDate())
 

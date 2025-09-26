@@ -8,7 +8,7 @@ _current_theme = "dark"  # можно  "light" или "dark"
 
 def _qss_path_for(theme: str) -> str:
     base = os.path.dirname(__file__)
-    fname = "light.qss" if theme == "light" else "style.qss"
+    fname = "light.qss" if theme == "light" else "dark.qss"
     return os.path.join(base, fname)
 
 def _apply_qss(app: QApplication, theme: str) -> None:
