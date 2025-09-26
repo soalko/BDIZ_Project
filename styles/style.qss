@@ -1,9 +1,10 @@
 /* ===== ОСНОВНЫЕ СТИЛИ ===== */
+
 QMainWindow, QWidget, QDialog {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #0b0c12,
-                              stop: 0.5 #11131d,
-                              stop: 1 #171a26);
+                              stop: 0 #0B0C12,
+                              stop: 0.5 #08122F,
+                              stop: 1 #15245F);
     color: #cdd6f4;
     font-family: 'Segoe UI', 'Roboto', sans-serif;
     font-size: 13px;
@@ -26,7 +27,7 @@ QGroupBox {
     margin-top: 12px;
     padding-top: 18px;
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #141726, stop: 1 #0f111c);
+                              stop: 0 #000000, stop: 1 #0A123D);
     color: #a6adc8;
 }
 
@@ -35,7 +36,7 @@ QGroupBox::title {
     subcontrol-position: top center;
     padding: 0 12px;
     background-color: #181825;
-    color: #74c7ec;
+    color: #DBE6FF;
 }
 
 /* ===== КНОПКИ (единый цвет) ===== */
@@ -50,39 +51,43 @@ QPushButton {
     font-weight: 600;
     font-size: 12px;
     margin: 3px;
+    min-weight: 100px;
 }
 
 QPushButton:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 rgba(255, 188, 223, 0.28),
-                              stop: 1 rgba(203, 166, 247, 0.28));
+                              stop: 0 rgba(88, 134, 237, 0.28),
+                              stop: 1 rgba(103, 127, 181, 0.28));
     border-color: rgba(203, 166, 247, 0.45);
     box-shadow: 0 10px 26px rgba(203, 166, 247, 0.35);
 }
 
 QPushButton:focus {
     outline: none;
+    border: 2px solid #01011E;
     box-shadow: 0 0 0 3px rgba(203, 166, 247, 0.45);
 }
 
 QPushButton:pressed {
-    background: #74c7ec;
+    background: #030326;
+    border: 2px solid #01011E;
     padding: 11px 19px 9px 21px;
 }
 
 QPushButton:disabled {
-    background: #45475a;
-    border: 2px solid #6c7086;
+    background: #000000;
+    border: 2px solid #01011E;
     color: #6c7086;
 }
 
 /* ===== ПОЛЯ ВВОДА ===== */
 QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #0f111a, stop: 1 #141726);
-    border: 2px solid #3a3e55;
+                              stop: 0 #0D153B, stop: 1 #243278);
+    border: 2px solid #01011E;
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 8px 10px;
+    min-height: 23px;
     color: #cdd6f4;
     font-size: 13px;
     selection-background-color: #89b4fa;
@@ -92,7 +97,7 @@ QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
 
 QLineEdit:focus, QSpinBox:focus, QDateEdit:focus,
 QTimeEdit:focus, QComboBox:focus, QTextEdit:focus {
-    border: 2px solid #89b4fa;
+    border: 2px solid #4E7FCE;
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                               stop: 0 #10131e, stop: 1 #181c2c);
     box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.14);
@@ -106,7 +111,7 @@ QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
     width: 25px;
-    border-left: 2px solid #45475a;
+    border-left: 2px solid #01011E;
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
@@ -120,16 +125,16 @@ QComboBox::down-arrow {
 
 QComboBox QAbstractItemView {
     background-color: #1e1e2e;
-    border: 2px solid #45475a;
+    border: 2px solid #01011E;
     border-radius: 8px;
-    selection-background-color: #89b4fa;
+    selection-background-color: #6181F4;
     selection-color: #1e1e2e;
     outline: none;
 }
 
 QComboBox QAbstractItemView::item {
     padding: 8px;
-    border-bottom: 1px solid #313244;
+    border-bottom: 1px solid #01011E;
 }
 
 QComboBox QAbstractItemView::item:selected {
@@ -142,7 +147,7 @@ QDateEdit::up-button, QDateEdit::down-button,
 QTimeEdit::up-button, QTimeEdit::down-button {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                               stop: 0 #313244, stop: 1 #1e1e2e);
-    border: 1px solid #45475a;
+    border: 1px solid #01011E;
     width: 22px;
     border-radius: 4px;
 }
@@ -175,7 +180,7 @@ QCheckBox {
 QCheckBox::indicator {
     width: 18px;
     height: 18px;
-    border: 2px solid #45475a;
+    border: 2px solid #01011E;
     border-radius: 4px;
     background-color: #11111b;
     transition: all 0.2s ease;
@@ -192,15 +197,16 @@ QCheckBox::indicator:checked {
 }
 
 /* ===== ТАБЛИЦЫ ===== */
+/* ===== ТАБЛИЦЫ ===== */
 QTableView {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #090a10, stop: 0.5 #151a2b, stop: 1 #2f3550);
+                              stop: 0 #090a10, stop: 1 #151a2b);
     border: 2px solid #313244;
     border-radius: 10px;
     gridline-color: #313244;
     selection-background-color: #89b4fa;
     selection-color: #1e1e2e;
-    alternate-background-color: #181825;
+    alternate-background-color: #0B1A3E; /* ← Заливка нечетных строк */
     font-size: 12px;
     padding: 4px;
 }
@@ -213,18 +219,20 @@ QTableView::item {
 
 QTableView::item:hover {
     background-color: #313244;
+    border-radius: 6px;
 }
 
 QTableView::item:selected {
     background-color: #89b4fa;
     color: #1e1e2e;
     font-weight: 600;
+    border-radius: 6px;
 }
 
 QHeaderView::section {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
                               stop: 0 #41445e, stop: 1 #171a2a);
-    color: #74c7ec;
+    color: #DBE6FF;
     padding: 10px 12px;
     border: 1px solid #45475a;
     font-weight: 600;
@@ -236,8 +244,9 @@ QHeaderView::section:first {
     border-top-left-radius: 10px;
 }
 QHeaderView::section:last {
-    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
 }
+
 
 /* Кнопка в левом верхнем углу таблицы */
 QTableCornerButton::section {
@@ -253,25 +262,19 @@ QTableView::item {
     padding: 6px 10px;
 }
 QTableView::item:hover {
-    background-color: rgba(166, 227, 161, 0.18); /* мягкий зелёный для дарк-темы */
+    background-color: rgba(137, 180, 250, 0.18); /* мягкий зелёный для дарк-темы */
     border-radius: 6px;
 }
 
 QTableView::item:selected {
-    background-color: rgba(166, 227, 161, 0.28);
+    background-color: rgba(137, 180, 250, 0.28);
     color: #0f1410;
     border-radius: 6px;
 }
-QTableView::item:selected {
-    background-color: #89b4fa;
-    color: #1e1e2e;
-    border-radius: 6px;
-}
 
-QHeaderView::section:checked {
-    background: #89b4fa;
-    color: #1e1e2e;
-}
+
+
+
 
 /* ===== ВКЛАДКИ ===== */
 QTabWidget::pane {
@@ -345,10 +348,10 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 
 QScrollBar:horizontal {
     border: none;
-    background-color: #181825;
-    height: 14px;
-    margin: 2px;
     border-radius: 7px;
+    background-color: #181825;
+    min-width: 30px;
+    margin: 2px;
 }
 
 QScrollBar::handle:horizontal {
@@ -372,6 +375,38 @@ QFormLayout {
     spacing: 10px;
     margin: 12px;
 }
+
+
+
+/* ===== ЛОГ И СООБЩЕНИЯ ===== */
+QTextEdit {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                              stop: 0 #f7f8fb, stop: 1 #eef2f8);
+    border: 1px solid #d7dbe6;
+    border-radius: 8px;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    color: #4a5160;
+    padding: 10px;
+}
+QTextEdit:focus { border: 1px solid #8EB2E7; }
+
+QLabel[status="success"] {
+    color: #0d7a4a; font-weight: 600; background-color: rgba(24, 182, 113, 0.1);
+    padding: 8px; border-radius: 6px; border: 1px solid #18b671;
+}
+QLabel[status="error"] {
+    color: #9f1d22; font-weight: 600; background-color: rgba(226, 85, 90, 0.1);
+    padding: 8px; border-radius: 6px; border: 1px solid #e2555a;
+}
+QLabel[status="warning"] {
+    color: #9b5a00; font-weight: 600; background-color: rgba(255, 171, 16, 0.12);
+    padding: 8px; border-radius: 6px; border: 1px solid #ffab10;
+}
+
+QMessageBox { background-color: #f7f8fb; color: #2b2f38; }
+QMessageBox QLabel { color: #2b2f38; font-size: 13px; }
+QMessageBox QPushButton { min-width: 80px; }
 
 /* ===== АНИМАЦИИ ===== */
 QPushButton, QLineEdit, QComboBox, QSpinBox, QDateEdit, QTimeEdit, QCheckBox {
