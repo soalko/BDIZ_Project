@@ -141,6 +141,10 @@ class FlightsTab(QWidget):
         arrival_airport = self.arrival_airport_edit.text().strip().upper()
         flight_time = self.flight_time_edit.value()
 
+        if not arrival_airport.isalpha() or not departure_airport.isalpha():
+            QMessageBox.warning(self, "Ввод", "Аэропорты вылета и прибытия должны содержать только буквы")
+            return
+
         if not departure_airport or not arrival_airport:
             QMessageBox.warning(self, "Ввод", "Аэропорты вылета и прибытия обязательны")
             return

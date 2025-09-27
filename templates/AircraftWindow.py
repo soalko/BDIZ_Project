@@ -101,6 +101,9 @@ class AircraftTab(QWidget):
             QMessageBox.warning(self, "Ввод", "Модель самолета обязательна (NOT NULL)")
             return
 
+        if len(model) > 100:
+            model = model[:100]
+
         try:
             with self.engine.begin() as conn:
                 conn.execute(insert(self.t["aircraft"]).values(

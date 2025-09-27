@@ -38,6 +38,7 @@ class TicketsTab(QWidget):
         self.seat_number_edit.setMaxLength(4)
         self.has_baggage_checkbox = QCheckBox("Есть багаж")
         self.has_baggage_checkbox.setChecked(False)
+        self.seat_number_edit.setMaxLength(3)
 
         # Форма для ввода данных
         form = QFormLayout()
