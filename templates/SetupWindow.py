@@ -2,39 +2,14 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
-    QComboBox, QTextEdit, QGroupBox, QSpacerItem, QSizePolicy,
-)
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QPalette, QPixmap
-
-from styles.styles import switch_theme, get_current_theme
-
-# ===== SQLAlchemy ======
-from sqlalchemy.exc import SQLAlchemyError
-
-# ===== Files =====
-from db.config import PgConfig
-from db.session import (
-    make_engine
-)
-from db.models import (
-    build_metadata, insert_demo_data_sa, drop_and_create_schema_sa
-)
-
-
-# -------------------------------
-# ===== PySide6 =====
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
     QComboBox, QTextEdit, QGroupBox
 )
 
+from PySide6.QtCore import Qt
 
 # ===== SQLAlchemy =====
 from sqlalchemy.exc import SQLAlchemyError
 
-
 # ===== Files =====
 from db.config import PgConfig
 from db.session import (
@@ -43,7 +18,7 @@ from db.session import (
 from db.models import (
     build_metadata, insert_demo_data_sa, drop_and_create_schema_sa
 )
-
+from templates.modes import AppMode
 
 
 # -------------------------------
@@ -68,6 +43,18 @@ class SetupTab(QWidget):
         self.pw_edit.setEchoMode(QLineEdit.Password)
         self.ssl_edit = QLineEdit("prefer")
 
+        # Кнопки подключения/отключения
+        self.connect_btn = QPushButton("Подключиться к БД")
+        self.connect_btn.clicked.connect(self.do_connect)
+
+        self.disconnect_btn = QPushButton("Отключиться от БД")
+        self.disconnect_btn.clicked.connect(self.do_disconnect)
+        self.disconnect_btn.setEnabled(False)
+
+        conn_buttons = QHBoxLayout()
+        conn_buttons.addWidget(self.connect_btn)
+        conn_buttons.addWidget(self.disconnect_btn)
+
         conn_form = QFormLayout()
         conn_form.addRow("Driver:", self.driver_cb)
         conn_form.addRow("Host:", self.host_edit)
@@ -80,13 +67,6 @@ class SetupTab(QWidget):
         conn_box = QGroupBox("Параметры подключения (SQLAlchemy)")
         conn_box.setLayout(conn_form)
 
-        self.connect_btn = QPushButton("Подключиться")
-        self.connect_btn.clicked.connect(self.do_connect)
-
-        self.disconnect_btn = QPushButton("Отключиться")
-        self.disconnect_btn.setEnabled(False)
-        self.disconnect_btn.clicked.connect(self.do_disconnect)
-
         self.create_btn = QPushButton("Сбросить и создать БД (CREATE)")
         self.create_btn.setEnabled(False)
         self.create_btn.clicked.connect(self.reset_db)
@@ -95,40 +75,13 @@ class SetupTab(QWidget):
         self.demo_btn.setEnabled(False)
         self.demo_btn.clicked.connect(self.add_demo)
 
-        # Переключатель темы
-        self.theme_btn = QPushButton("Светлая тема")
-        self.theme_btn.clicked.connect(self.toggle_theme)
-
-        top_btns = QHBoxLayout()
-        top_btns.addWidget(self.connect_btn)
-        top_btns.addWidget(self.disconnect_btn)
-        top_btns.addStretch()
-        top_btns.addWidget(self.theme_btn)
-
         layout = QVBoxLayout(self)
-
         layout.addWidget(conn_box, 0)
-        layout.addLayout(top_btns)
+        layout.addLayout(conn_buttons)
         layout.addWidget(self.create_btn)
         layout.addWidget(self.demo_btn)
         layout.addWidget(QLabel("Лог:"))
         layout.addWidget(self.log)
-
-        # Инициализируем текст на кнопке темы согласно текущей теме
-        self._sync_theme_button_text()
-
-    def _sync_theme_button_text(self):
-        theme = get_current_theme()
-        if theme == "light":
-            self.theme_btn.setText("Тёмная тема")
-        else:
-            self.theme_btn.setText("Светлая тема")
-
-    def toggle_theme(self):
-        theme = get_current_theme()
-        new_theme = "dark" if theme == "light" else "light"
-        switch_theme(new_theme)
-        self._sync_theme_button_text()
 
     def current_cfg(self) -> PgConfig:
         try:
@@ -146,11 +99,11 @@ class SetupTab(QWidget):
         )
 
     def do_connect(self):
-        main = self.window()  # <-- было parent().parent()
-        # если уже подключены — просим отключиться
+        main = self.window()
         if getattr(main, "engine", None) is not None:
             self.log.append("Уже подключено. Нажмите «Отключиться» для переподключения.")
             return
+
         cfg = self.current_cfg()
         try:
             engine = make_engine(cfg)
@@ -163,21 +116,21 @@ class SetupTab(QWidget):
             self.demo_btn.setEnabled(True)
             self.connect_btn.setEnabled(False)
             self.disconnect_btn.setEnabled(True)
-            main.ensure_data_tabs()
         except SQLAlchemyError as e:
             self.log.append(f"Ошибка подключения: {e}")
+            QMessageBox.critical(self, "Ошибка подключения", str(e))
 
     def do_disconnect(self):
-        main = self.window()  # <-- было parent().parent()
+        main = self.window()
         main.disconnect_db()
-        self.connect_btn.setEnabled(True)
-        self.disconnect_btn.setEnabled(False)
         self.create_btn.setEnabled(False)
         self.demo_btn.setEnabled(False)
+        self.connect_btn.setEnabled(True)
+        self.disconnect_btn.setEnabled(False)
         self.log.append("Соединение закрыто.")
 
     def reset_db(self):
-        main = self.window()  # <-- было parent().parent()
+        main = self.window()
         if getattr(main, "engine", None) is None:
             QMessageBox.warning(self, "Схема", "Нет подключения к БД.")
             return
@@ -186,10 +139,10 @@ class SetupTab(QWidget):
             main.refresh_all_models()
             main.refresh_combos()
         else:
-            QMessageBox.critical(self, "Схема", "Ошибка при создании схемы. См. консоль/лог.")
+            QMessageBox.critical(self, "Схема", "Ошибка при создании схема. См. консоль/лог.")
 
     def add_demo(self):
-        main = self.window()  # <-- было parent().parent()
+        main = self.window()
         if getattr(main, "engine", None) is None:
             QMessageBox.warning(self, "Демо", "Нет подключения к БД.")
             return

@@ -21,20 +21,23 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 # ===== Files =====
 from db.models import SATableModel
+from templates.BaseTab import BaseTab
+from templates.modes import AppMode
 
 
 
 # -------------------------------
 # Вкладка «Рейсы»
 # --------------------------------
-class FlightsTab(QWidget):
+class FlightsTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
-        super().__init__(parent)
-        self.engine = engine
-        self.t = tables
+        super().__init__(engine, tables, parent)
+
         self.model = SATableModel(engine, self.t["flights"], self)
 
-        # Создание виджетов для ввода данных
+        self.form_widget = QWidget()
+        self.buttons_widget = QWidget()
+
         self.aircraft_combo = QComboBox()
         self.departure_date_edit = QDateEdit()
         self.departure_date_edit.setCalendarPopup(False)
@@ -52,68 +55,80 @@ class FlightsTab(QWidget):
         self.arrival_airport_edit.setMaxLength(3)
 
         self.flight_time_edit = QSpinBox()
-        self.flight_time_edit.setRange(1, 1440)  # от 1 минуты до 24 часов
+        self.flight_time_edit.setRange(1, 1440)
         self.flight_time_edit.setValue(120)
         self.flight_time_edit.setSuffix(" минут")
 
-        # Форма для ввода данных
-        form = QFormLayout()
-        form.addRow("Самолет:", self.aircraft_combo)
-        form.addRow("Дата вылета:", self.departure_date_edit)
-        form.addRow("Время вылета:", self.departure_time_edit)
-        form.addRow("Аэропорт вылета:", self.departure_airport_edit)
-        form.addRow("Аэропорт прибытия:", self.arrival_airport_edit)
-        form.addRow("Время полета:", self.flight_time_edit)
+        self.form = QFormLayout(self.form_widget)
+        self.form.addRow("Самолет:", self.aircraft_combo)
+        self.form.addRow("Дата вылета:", self.departure_date_edit)
+        self.form.addRow("Время вылета:", self.departure_time_edit)
+        self.form.addRow("Аэропорт вылета:", self.departure_airport_edit)
+        self.form.addRow("Аэропорт прибытия:", self.arrival_airport_edit)
+        self.form.addRow("Время полета:", self.flight_time_edit)
 
-        # Кнопки
         self.add_btn = QPushButton("Добавить рейс (INSERT)")
         self.add_btn.clicked.connect(self.add_flight)
         self.del_btn = QPushButton("Удалить выбранный рейс")
         self.del_btn.clicked.connect(self.delete_selected)
 
-        btns = QHBoxLayout()
-        btns.addWidget(self.add_btn)
-        btns.addWidget(self.del_btn)
+        self.btns = QHBoxLayout(self.buttons_widget)
+        self.btns.addWidget(self.add_btn)
+        self.btns.addWidget(self.del_btn)
 
-        # Таблица
         self.table = QTableView()
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.table)
 
-        # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
         self.table.setModel(self.proxy_model)
         self.table.setSortingEnabled(True)
 
         def on_header_clicked(self, logical_index):
-            # Получаем и меняем текущее направление сортировки
             current_order = self.proxy_model.sortOrder()
             new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
             self.proxy_model.sort(logical_index, new_order)
 
-        # Дополнительные настройки для лучшего отображения
         header = self.table.horizontalHeader()
         header.setSectionsClickable(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
-        # Привязываем метод к классу
         self.on_header_clicked = on_header_clicked.__get__(self)
 
-        # Основной layout
-        layout = QVBoxLayout(self)
-        layout.addLayout(form)
-        layout.addLayout(btns)
-        layout.addWidget(self.table)
+        self.add_record_btn.clicked.connect(self.add_flight)
+        self.clear_form_btn.clicked.connect(self.clear_form)
+        self.delete_record_btn.clicked.connect(self.delete_selected)
 
-        # Загрузка данных в комбобокс
+        self.main_layout.addWidget(self.form_widget)
+        self.main_layout.addWidget(self.buttons_widget)
+        self.main_layout.addWidget(self.table)
+
         self.refresh_aircraft_combo()
 
+        self.update_ui_for_mode()
+
+    def set_mode(self, mode: AppMode):
+        super().set_mode(mode)
+        self.update_ui_for_mode()
+
+    def update_ui_for_mode(self):
+        super().update_ui_for_mode()
+
+        if self.current_mode == AppMode.ADD:
+            self.form_widget.setVisible(True)
+            self.buttons_widget.setVisible(True)
+        elif self.current_mode == AppMode.READ:
+            self.form_widget.setVisible(False)
+            self.buttons_widget.setVisible(False)
+        elif self.current_mode == AppMode.EDIT:
+            self.form_widget.setVisible(False)
+            self.buttons_widget.setVisible(False)
+
     def refresh_aircraft_combo(self):
-        """Обновление списка самолетов в комбобоксе"""
         self.aircraft_combo.clear()
         try:
             with self.engine.connect() as conn:
@@ -130,6 +145,9 @@ class FlightsTab(QWidget):
         return time(qt.hour(), qt.minute())
 
     def add_flight(self):
+        if self.current_mode != AppMode.ADD:
+            return
+
         if self.aircraft_combo.currentIndex() == -1:
             QMessageBox.warning(self, "Ввод", "Необходимо выбрать самолет")
             return
@@ -168,6 +186,9 @@ class FlightsTab(QWidget):
             QMessageBox.critical(self, "Ошибка INSERT", str(e))
 
     def delete_selected(self):
+        if self.current_mode != AppMode.ADD:
+            return
+
         idx = self.table.currentIndex()
         if not idx.isValid():
             QMessageBox.information(self, "Удаление", "Выберите рейс")
@@ -185,7 +206,6 @@ class FlightsTab(QWidget):
             QMessageBox.critical(self, "Ошибка удаления", str(e))
 
     def clear_form(self):
-        """Очистка формы после успешного добавления"""
         self.departure_airport_edit.clear()
         self.arrival_airport_edit.clear()
         self.flight_time_edit.setValue(120)

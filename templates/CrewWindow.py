@@ -18,75 +18,90 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 # ===== Files =====
 from db.models import SATableModel
+from templates.BaseTab import BaseTab
+from templates.modes import AppMode
 
 
 
 # -------------------------------
 # Вкладка «Экипаж»
 # --------------------------------
-class CrewTab(QWidget):
+class CrewTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
-        super().__init__(parent)
-        self.engine = engine
-        self.t = tables
+        super().__init__(engine, tables, parent)
+
         self.model = SATableModel(engine, self.t["crew"], self)
 
-        # Создание виджетов для ввода данных
+        self.form_widget = QWidget()
+        self.buttons_widget = QWidget()
+
         self.aircraft_combo = QComboBox()
 
-        # Форма для ввода данных
-        form = QFormLayout()
-        form.addRow("Самолет:", self.aircraft_combo)
+        self.form = QFormLayout(self.form_widget)
+        self.form.addRow("Самолет:", self.aircraft_combo)
 
-        # Кнопки
         self.add_btn = QPushButton("Добавить экипаж (INSERT)")
         self.add_btn.clicked.connect(self.add_crew)
         self.del_btn = QPushButton("Удалить выбранный экипаж")
         self.del_btn.clicked.connect(self.delete_selected)
 
-        btns = QHBoxLayout()
-        btns.addWidget(self.add_btn)
-        btns.addWidget(self.del_btn)
+        self.btns = QHBoxLayout(self.buttons_widget)
+        self.btns.addWidget(self.add_btn)
+        self.btns.addWidget(self.del_btn)
 
-        # Таблица
         self.table = QTableView()
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.table)
 
-        # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
         self.table.setModel(self.proxy_model)
         self.table.setSortingEnabled(True)
 
         def on_header_clicked(self, logical_index):
-            # Получаем и меняем текущее направление сортировки
             current_order = self.proxy_model.sortOrder()
             new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
             self.proxy_model.sort(logical_index, new_order)
 
-        # Дополнительные настройки для лучшего отображения
         header = self.table.horizontalHeader()
         header.setSectionsClickable(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
-        # Привязываем метод к классу
         self.on_header_clicked = on_header_clicked.__get__(self)
 
-        # Основной layout
-        layout = QVBoxLayout(self)
-        layout.addLayout(form)
-        layout.addLayout(btns)
-        layout.addWidget(self.table)
+        self.add_record_btn.clicked.connect(self.add_crew)
+        self.clear_form_btn.clicked.connect(self.clear_form)
+        self.delete_record_btn.clicked.connect(self.delete_selected)
 
-        # Загрузка данных в комбобокс
+        self.main_layout.addWidget(self.form_widget)
+        self.main_layout.addWidget(self.buttons_widget)
+        self.main_layout.addWidget(self.table)
+
         self.refresh_aircraft_combo()
 
+        self.update_ui_for_mode()
+
+    def set_mode(self, mode: AppMode):
+        super().set_mode(mode)
+        self.update_ui_for_mode()
+
+    def update_ui_for_mode(self):
+        super().update_ui_for_mode()
+
+        if self.current_mode == AppMode.ADD:
+            self.form_widget.setVisible(True)
+            self.buttons_widget.setVisible(True)
+        elif self.current_mode == AppMode.READ:
+            self.form_widget.setVisible(False)
+            self.buttons_widget.setVisible(False)
+        elif self.current_mode == AppMode.EDIT:
+            self.form_widget.setVisible(False)
+            self.buttons_widget.setVisible(False)
+
     def refresh_aircraft_combo(self):
-        """Обновление списка самолетов в комбобоксе"""
         self.aircraft_combo.clear()
         try:
             with self.engine.connect() as conn:
@@ -100,6 +115,9 @@ class CrewTab(QWidget):
             QMessageBox.critical(self, "Ошибка загрузки самолетов", str(e))
 
     def add_crew(self):
+        if self.current_mode != AppMode.ADD:
+            return
+
         if self.aircraft_combo.currentIndex() == -1:
             QMessageBox.warning(self, "Ввод", "Необходимо выбрать самолет")
             return
@@ -123,6 +141,9 @@ class CrewTab(QWidget):
             QMessageBox.critical(self, "Ошибка INSERT", str(e))
 
     def delete_selected(self):
+        if self.current_mode != AppMode.ADD:
+            return
+
         idx = self.table.currentIndex()
         if not idx.isValid():
             QMessageBox.information(self, "Удаление", "Выберите экипаж")
@@ -131,7 +152,6 @@ class CrewTab(QWidget):
         crew_id = self.model.pk_value_at(idx.row())
         try:
             with self.engine.begin() as conn:
-                # Сначала проверяем, есть ли члены экипажа
                 result = conn.execute(
                     self.t["crew_member"].select().where(
                         self.t["crew_member"].c.crew_id == crew_id
@@ -155,6 +175,4 @@ class CrewTab(QWidget):
             QMessageBox.critical(self, "Ошибка удаления", str(e))
 
     def clear_form(self):
-        """Очистка формы после успешного добавления"""
-        # Не очищаем комбобокс, чтобы можно было быстро добавить несколько экипажей
         pass

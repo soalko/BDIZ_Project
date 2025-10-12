@@ -6,27 +6,51 @@ from PySide6.QtWidgets import (
     QFormLayout, QLineEdit, QPushButton,
     QMessageBox, QSpinBox, QTableView, QHeaderView
 )
-from styles.styles import apply_compact_table_view
 
-# ===== SQLAlchemy ======
+# ===== SQLAlchemy =====
 from sqlalchemy import insert, delete
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 # ===== Files =====
+import sys
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from db.models import SATableModel
+from templates.BaseTab import BaseTab
+from templates.modes import AppMode
+
+try:
+    from styles import apply_compact_table_view
+except ImportError:
+    def apply_compact_table_view(table_widget):
+        try:
+            table_widget.setAlternatingRowColors(True)
+            if hasattr(table_widget, "setShowGrid"):
+                table_widget.setShowGrid(False)
+            header = table_widget.horizontalHeader()
+            header.setStretchLastSection(True)
+            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        except Exception:
+            pass
 
 
 # -------------------------------
 # Вкладка «Самолеты»
 # -------------------------------
-class AircraftTab(QWidget):
+class AircraftTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
-        super().__init__(parent)
-        self.engine = engine
-        self.t = tables
+        super().__init__(engine, tables, parent)
+
         self.model = SATableModel(engine, self.t["aircraft"], self)
 
-        # Создание виджетов для ввода данных
+        self.form_widget = QWidget()
+        self.buttons_widget = QWidget()
+
         self.model_edit = QLineEdit()
         self.year_edit = QSpinBox()
         self.year_edit.setRange(1900, QDate.currentDate().year())
@@ -40,58 +64,75 @@ class AircraftTab(QWidget):
         self.baggage_edit.setRange(0, 10000)
         self.baggage_edit.setValue(1000)
 
-        # Форма для ввода данных
-        form = QFormLayout()
-        form.addRow("Модель:", self.model_edit)
-        form.addRow("Год выпуска:", self.year_edit)
-        form.addRow("Количество мест:", self.seats_edit)
-        form.addRow("Вместимость багажа:", self.baggage_edit)
+        self.form = QFormLayout(self.form_widget)
+        self.form.addRow("Модель:", self.model_edit)
+        self.form.addRow("Год выпуска:", self.year_edit)
+        self.form.addRow("Количество мест:", self.seats_edit)
+        self.form.addRow("Вместимость багажа:", self.baggage_edit)
 
-        # Кнопки
         self.add_btn = QPushButton("Добавить самолет (INSERT)")
         self.add_btn.clicked.connect(self.add_aircraft)
         self.del_btn = QPushButton("Удалить выбранный самолет")
         self.del_btn.clicked.connect(self.delete_selected)
 
-        btns = QHBoxLayout()
-        btns.addWidget(self.add_btn)
-        btns.addWidget(self.del_btn)
+        self.btns = QHBoxLayout(self.buttons_widget)
+        self.btns.addWidget(self.add_btn)
+        self.btns.addWidget(self.del_btn)
 
-        # Таблица
         self.table = QTableView()
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.table)
 
-        # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
         self.table.setModel(self.proxy_model)
         self.table.setSortingEnabled(True)
 
         def on_header_clicked(self, logical_index):
-            # Получаем и меняем текущее направление сортировки
             current_order = self.proxy_model.sortOrder()
             new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
             self.proxy_model.sort(logical_index, new_order)
 
-        # Дополнительные настройки для лучшего отображения
         header = self.table.horizontalHeader()
         header.setSectionsClickable(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
-        # Привязываем метод к классу
         self.on_header_clicked = on_header_clicked.__get__(self)
 
-        # Основной layout
-        layout = QVBoxLayout(self)
-        layout.addLayout(form)
-        layout.addLayout(btns)
-        layout.addWidget(self.table)
+        self.add_record_btn.clicked.connect(self.add_aircraft)
+        self.clear_form_btn.clicked.connect(self.clear_form)
+        self.delete_record_btn.clicked.connect(self.delete_selected)
+
+        self.main_layout.addWidget(self.form_widget)
+        self.main_layout.addWidget(self.buttons_widget)
+        self.main_layout.addWidget(self.table)
+
+        self.update_ui_for_mode()
+
+    def set_mode(self, mode: AppMode):
+        super().set_mode(mode)
+        self.update_ui_for_mode()
+
+    def update_ui_for_mode(self):
+        super().update_ui_for_mode()
+
+        if self.current_mode == AppMode.ADD:
+            self.form_widget.setVisible(True)
+            self.buttons_widget.setVisible(True)
+        elif self.current_mode == AppMode.READ:
+            self.form_widget.setVisible(False)
+            self.buttons_widget.setVisible(False)
+        elif self.current_mode == AppMode.EDIT:
+            self.form_widget.setVisible(False)
+            self.buttons_widget.setVisible(False)
 
     def add_aircraft(self):
+        if self.current_mode != AppMode.ADD:
+            return
+
         model = self.model_edit.text().strip()
         year = self.year_edit.value()
         seats = self.seats_edit.value()
@@ -115,6 +156,9 @@ class AircraftTab(QWidget):
             QMessageBox.critical(self, "Ошибка INSERT", str(e))
 
     def delete_selected(self):
+        if self.current_mode != AppMode.ADD:
+            return
+
         idx = self.table.currentIndex()
         if not idx.isValid():
             QMessageBox.information(self, "Удаление", "Выберите самолет")
@@ -132,7 +176,6 @@ class AircraftTab(QWidget):
             QMessageBox.critical(self, "Ошибка удаления", str(e))
 
     def clear_form(self):
-        """Очистка формы после успешного добавления"""
         self.model_edit.clear()
         self.year_edit.setValue(2000)
         self.seats_edit.setValue(150)

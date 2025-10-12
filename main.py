@@ -1,37 +1,27 @@
-# -*- coding: utf-8 -*-
-"""
-PySide6 + SQLAlchemy (PostgreSQL) — стабильная версия:
-- Без QtSql / PyQt.
-- QAbstractTableModel с beginResetModel/endResetModel.
-- Кнопки: Подключиться/Отключиться, CREATE schema, INSERT demo.
-- Переключатель драйвера: psycopg2 / psycopg (v3) / pg8000 (pure Python).
-- Вместо parent().parent() используем self.window() для доступа к MainWindow.
-"""
-
-# ===== Base =====
 import sys
-import faulthandler
-
-faulthandler.enable()
-
-# ===== PySide6 =====
+import os
 from PySide6.QtWidgets import QApplication
 
-# ===== Files =====
+# Добавляем пути для импорта
+sys.path.append(os.path.join(os.path.dirname(__file__), 'db'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'templates'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'styles'))
+
 from templates.MainWindow import MainWindow
 from styles.styles import connect_styles
 
 
-# -------------------------------
-# Точка входа
-# --------------------------------
 def main():
     app = QApplication(sys.argv)
+
+    # Применяем стили
     connect_styles(app)
-    win = MainWindow()
-    win.show()
+
+    window = MainWindow()
+    window.show()
+
     sys.exit(app.exec())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

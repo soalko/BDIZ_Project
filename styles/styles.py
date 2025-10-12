@@ -17,7 +17,6 @@ def _apply_qss(app: QApplication, theme: str) -> None:
         with open(path, "r", encoding="utf-8") as f:
             app.setStyleSheet(f.read())
     except FileNotFoundError:
-        # если QSS не найден — используем дефолтный стиль (пустой)
         print(f"[styles] QSS not found: {path}. Using default style.")
         app.setStyleSheet("")
     except Exception as e:
@@ -33,14 +32,12 @@ def connect_styles(app: QApplication) -> None:
         font = QFont("Segoe UI", 10)
         app.setFont(font)
     except Exception:
-        # на некоторых системах этот шрифт может отсутствовать — игнорируем
         pass
     _apply_qss(app, _current_theme)
 
 def switch_theme(theme: str) -> None:
     """
     Переключить тему на 'light' или 'dark'.
-    Вызывается из SetupWindow.toggle_theme(new_theme).
     """
     global _current_theme
     if not isinstance(theme, str):
@@ -64,13 +61,10 @@ def apply_compact_table_view(table_widget) -> None:
     """
     try:
         table_widget.setAlternatingRowColors(True)
-        # скрываем сетку для более компактного вида
         if hasattr(table_widget, "setShowGrid"):
             table_widget.setShowGrid(False)
-        # горизонтальный заголовок: подгонять размеры под содержимое
         header = table_widget.horizontalHeader()
         header.setStretchLastSection(True)
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
     except Exception:
-        # не критично, если не QTableView или методы отличаются
         pass
