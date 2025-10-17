@@ -388,7 +388,7 @@ QTextEdit:focus {
 }
 
 QMessageBox {
-    background-color: #f7f8fb;
+    background-color: #FFFFFF;
     color: #2b2f38;
 }
 

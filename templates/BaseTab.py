@@ -22,13 +22,16 @@ class BaseTab(QWidget):
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText("Фильтр...")
 
-        # Элементы для режима редактирования
+        # Элементы для режима редактирования СТРУКТУРЫ
         self.add_column_btn = QPushButton("Добавить столбец")
-        self.change_type_btn = QPushButton("Изменить тип данных")
-        self.add_relation_btn = QPushButton("Добавить связи")
-        self.edit_btn = QPushButton("Редактировать запись")
-        self.save_edit_btn = QPushButton("Сохранить изменения")
-        self.cancel_edit_btn = QPushButton("Отменить редактирование")
+        self.delete_column_btn = QPushButton("Удалить столбец")
+        self.edit_column_btn = QPushButton("Изменить столбец")
+        self.save_structure_btn = QPushButton("Сохранить структуру")
+        self.cancel_structure_btn = QPushButton("Отменить изменения")
+
+        # Отключаем кнопки удаления и изменения изначально
+        self.delete_column_btn.setEnabled(False)
+        self.edit_column_btn.setEnabled(False)
 
         # Элементы для режима добавления
         self.add_record_btn = QPushButton("Добавить запись")
@@ -65,11 +68,10 @@ class BaseTab(QWidget):
         self.read_layout.addStretch()
 
         self.edit_layout.addWidget(self.add_column_btn)
-        self.edit_layout.addWidget(self.change_type_btn)
-        self.edit_layout.addWidget(self.add_relation_btn)
-        self.edit_layout.addWidget(self.edit_btn)
-        self.edit_layout.addWidget(self.save_edit_btn)
-        self.edit_layout.addWidget(self.cancel_edit_btn)
+        self.edit_layout.addWidget(self.delete_column_btn)
+        self.edit_layout.addWidget(self.edit_column_btn)
+        self.edit_layout.addWidget(self.save_structure_btn)
+        self.edit_layout.addWidget(self.cancel_structure_btn)
         self.edit_layout.addStretch()
 
         self.add_layout.addWidget(self.add_record_btn)
@@ -95,3 +97,7 @@ class BaseTab(QWidget):
             self.tool_layout.addWidget(self.add_widgets)
 
         self.tool_panel.setVisible(self.current_mode in [AppMode.READ, AppMode.EDIT, AppMode.ADD])
+
+    def cancel_structure_changes(self):
+        """Базовый метод для отмены изменений структуры - должен быть переопределен в дочерних классах"""
+        pass
