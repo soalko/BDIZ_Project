@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLineEdit, QDialog, QTabWidget, QLabel, QGroupBox, QTextEdit, QCheckBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLineEdit, QDialog, QTabWidget, \
+    QLabel, QGroupBox, QTextEdit, QCheckBox, QScrollArea
 from PySide6.QtCore import QSortFilterProxyModel, Qt
 from templates.modes import AppMode
 
@@ -22,7 +23,6 @@ class BaseTab(QWidget):
         self.join_btn = QPushButton("JOIN")
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText("Фильтр...")
-
 
         # кнопка фильтрации для режима чтения
         self.filter_button = QPushButton("Фильтрация")
@@ -71,7 +71,6 @@ class BaseTab(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.addWidget(self.tool_panel)
 
-
     def setup_tool_widgets(self):
         # В РЕЖИМЕ ЧТЕНИЯ показываем только новую кнопку "Фильтрация"
         # Старые элементы намеренно не добавляются в layout, чтобы их не было в интерфейсе
@@ -109,12 +108,10 @@ class BaseTab(QWidget):
 
         self.tool_panel.setVisible(self.current_mode in [AppMode.READ, AppMode.EDIT, AppMode.ADD])
 
-
     # диалог фильтрации и обработчики в режиме чтения
 
     def open_filter_dialog(self):
         """Открывает диалог построения SQL и передает результат в обработчик"""
-
 
         dialog = SQLFilterDialog(self)
         if dialog.exec() == QDialog.Accepted:
@@ -141,11 +138,18 @@ class SQLFilterDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Фильтры SQL")
-        self.setMinimumSize(900, 1000)
+        self.setMinimumSize(900, 600)
         self.setup_ui()
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        main_widget = QWidget()
+        main_layout = QVBoxLayout(main_widget)
 
         # вкладки для выбора действий SQL
         self.tabs_widget = QTabWidget()
@@ -166,7 +170,7 @@ class SQLFilterDialog(QDialog):
         join_tab = self.create_join_tab()
         self.tabs_widget.addTab(join_tab, "JOIN")
 
-        layout.addWidget(self.tabs_widget)
+        main_layout.addWidget(self.tabs_widget)
 
         # Кнопки управления
         buttons_row = QHBoxLayout()
@@ -182,14 +186,17 @@ class SQLFilterDialog(QDialog):
         buttons_row.addStretch()
         buttons_row.addWidget(self.close_button)
 
-        layout.addLayout(buttons_row)
+        main_layout.addLayout(buttons_row)
 
         # Предпросмотр SQL
-        layout.addWidget(QLabel("Предпросмотр SQL:"))
+        main_layout.addWidget(QLabel("Предпросмотр SQL:"))
         self.sql_preview = QTextEdit()
         self.sql_preview.setPlaceholderText("Полученный SQL запрос")
         self.sql_preview.setMaximumHeight(100)
-        layout.addWidget(self.sql_preview)
+        main_layout.addWidget(self.sql_preview)
+
+        scroll_area.setWidget(main_widget)
+        layout.addWidget(scroll_area)
 
     def create_select_tab(self):
         tab = QWidget()
@@ -394,7 +401,7 @@ class SQLFilterDialog(QDialog):
         vbox.addWidget(join_group)
         return tab
 
-    #Обработчики построения SQL
+    # Обработчики построения SQL
     def add_function(self):
         function = self.functions_combo.currentText()
         column = self.function_column_combo.currentText()
