@@ -27,7 +27,7 @@ from templates.modes import AppMode
 class SetupTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.log = QTextEdit();
+        self.log = QTextEdit()
         self.log.setReadOnly(True)
 
         self.driver_cb = QComboBox()
@@ -75,13 +75,7 @@ class SetupTab(QWidget):
         self.demo_btn.setEnabled(False)
         self.demo_btn.clicked.connect(self.add_demo)
 
-        top_btns = QHBoxLayout()
-        top_btns.addWidget(self.connect_btn)
-        top_btns.addWidget(self.disconnect_btn)
-        top_btns.addStretch()
-
         layout = QVBoxLayout(self)
-
         layout.addWidget(conn_box, 0)
         layout.addLayout(conn_buttons)
         layout.addWidget(self.create_btn)
@@ -105,8 +99,7 @@ class SetupTab(QWidget):
         )
 
     def do_connect(self):
-        main = self.window()  # <-- было parent().parent()
-        # если уже подключены — просим отключиться
+        main = self.window()
         if getattr(main, "engine", None) is not None:
             self.log.append("Уже подключено. Нажмите «Отключиться» для переподключения.")
             return
@@ -123,7 +116,6 @@ class SetupTab(QWidget):
             self.demo_btn.setEnabled(True)
             self.connect_btn.setEnabled(False)
             self.disconnect_btn.setEnabled(True)
-            main.ensure_data_tabs()
         except SQLAlchemyError as e:
             self.log.append(f"Ошибка подключения: {e}")
             QMessageBox.critical(self, "Ошибка подключения", str(e))
@@ -135,8 +127,6 @@ class SetupTab(QWidget):
         self.demo_btn.setEnabled(False)
         self.connect_btn.setEnabled(True)
         self.disconnect_btn.setEnabled(False)
-        self.create_btn.setEnabled(False)
-        self.demo_btn.setEnabled(False)
         self.log.append("Соединение закрыто.")
 
     def reset_db(self):

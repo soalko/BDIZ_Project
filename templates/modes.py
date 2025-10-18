@@ -1,6 +1,4 @@
-from enum import Enum
-
-class AppMode(Enum):
+class AppMode:
     READ = "read"
     EDIT = "edit"
     ADD = "add"

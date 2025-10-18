@@ -1,20 +1,15 @@
 # ===== Base =====
 from typing import Optional, Dict
-import os
-from typing import Optional, Dict
 
 # ===== PySide6 =====
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QTabWidget, QHBoxLayout, QWidget, QPushButton, QVBoxLayout
 )
-from PySide6.QtGui import QPalette, QBrush, QPixmap
-from PySide6.QtCore import Qt
 
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     MetaData, Table
 )
-
 from sqlalchemy.engine import Engine
 
 # ===== Files =====
@@ -38,23 +33,18 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Airport Database Management System")
         self.resize(1100, 740)
 
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+
         self.engine: Optional[Engine] = None
         self.md: Optional[MetaData] = None
         self.tables: Optional[Dict[str, Table]] = None
         self.current_mode: AppMode = AppMode.SETUP
 
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
-
         self.tabs = QTabWidget()
-        try:
-            self.tabs.setMovable(True)
-        except Exception:
-            try:
-                self.tabs.tabBar().setMovable(True)
-            except Exception:
-                pass
+        self.tabs.setMovable(True)
+
 
         self.setup_tab = SetupTab()
         self.tabs.addTab(self.setup_tab, "Подключение и схема БД")
@@ -66,17 +56,8 @@ class MainWindow(QMainWindow):
         self.crew_tab: Optional[CrewTab] = None
         self.crew_members_tab: Optional[CrewMembersTab] = None
 
-        self.mode_panel = self.create_mode_panel()
-        main_layout.addWidget(self.mode_panel)
-
-        main_layout.addWidget(self.tabs)
-
-        self.update_mode_buttons_state()
-        self.update_theme_button_text()
-
-    def create_mode_panel(self):
-        panel = QWidget()
-        layout = QHBoxLayout(panel)
+        self.mode_panel = QWidget()
+        layout = QHBoxLayout(self.mode_panel)
         layout.setContentsMargins(10, 5, 10, 5)
 
         self.read_btn = QPushButton("Читать данные")
@@ -89,23 +70,26 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.add_btn)
 
         layout.addStretch()
-
         layout.addWidget(self.theme_btn)
 
+        self.connect_mode_panel()
+        main_layout.addWidget(self.mode_panel)
+
+        main_layout.addWidget(self.tabs)
+
+        self.update_mode_buttons_state()
+
+    def connect_mode_panel(self):
         self.read_btn.clicked.connect(lambda: self.set_mode(AppMode.READ))
         self.edit_btn.clicked.connect(lambda: self.set_mode(AppMode.EDIT))
         self.add_btn.clicked.connect(lambda: self.set_mode(AppMode.ADD))
         self.theme_btn.clicked.connect(self.toggle_theme)
 
-        return panel
-
     def toggle_theme(self):
         current = get_current_theme()
         new_theme = "light" if current == "dark" else "dark"
         switch_theme(new_theme)
-        self.update_theme_button_text()
 
-    def update_theme_button_text(self):
         current = get_current_theme()
         self.theme_btn.setText("Светлая тема" if current == "dark" else "Темная тема")
 
@@ -201,16 +185,14 @@ class MainWindow(QMainWindow):
                 tab.set_mode(self.current_mode)
 
     def refresh_combos(self):
-        if self.flights_tab and hasattr(self.flights_tab, 'refresh_aircraft_combo'):
-            self.flights_tab.refresh_aircraft_combo()
-        if self.tickets_tab and hasattr(self.tickets_tab, 'refresh_flights_combo'):
-            self.tickets_tab.refresh_flights_combo()
-        if self.tickets_tab and hasattr(self.tickets_tab, 'refresh_passengers_combo'):
-            self.tickets_tab.refresh_passengers_combo()
-        if self.crew_tab and hasattr(self.crew_tab, 'refresh_aircraft_combo'):
-            self.crew_tab.refresh_aircraft_combo()
-        if self.crew_members_tab and hasattr(self.crew_members_tab, 'refresh_crew_combo'):
-            self.crew_members_tab.refresh_crew_combo()
+        tabs = [
+            self.aircraft_tab, self.flights_tab, self.passengers_tab,
+            self.tickets_tab, self.crew_tab, self.crew_members_tab
+        ]
+
+        for tab in tabs:
+            if tab and hasattr(tab, 'refresh_aircraft_combo'):
+                tab.refresh_aircraft_combo()
 
     def disconnect_db(self):
         tabs_to_remove = [
