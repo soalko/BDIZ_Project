@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 from styles.styles import apply_compact_table_view
 
+
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     insert, delete
@@ -14,10 +15,12 @@ from sqlalchemy import (
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+
 # ===== Files =====
 from db.models import SATableModel
 from templates.BaseTab import BaseTab
 from templates.modes import AppMode
+
 
 
 # -------------------------------
@@ -34,9 +37,11 @@ class CrewTab(BaseTab):
 
         self.aircraft_combo = QComboBox()
 
-        self.form = QFormLayout(self.form_widget)
-        self.form.addRow("Самолет:", self.aircraft_combo)
+        # Форма для ввода данных
+        form = QFormLayout()
+        form.addRow("Самолет:", self.aircraft_combo)
 
+        # Кнопки
         self.add_btn = QPushButton("Добавить экипаж (INSERT)")
         self.add_btn.clicked.connect(self.add_crew)
         self.del_btn = QPushButton("Удалить выбранный экипаж")
@@ -46,29 +51,37 @@ class CrewTab(BaseTab):
         self.btns.addWidget(self.add_btn)
         self.btns.addWidget(self.del_btn)
 
+        # Таблица
         self.table = QTableView()
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.table)
 
+        # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
         self.table.setModel(self.proxy_model)
         self.table.setSortingEnabled(True)
 
         def on_header_clicked(self, logical_index):
+            # Получаем и меняем текущее направление сортировки
             current_order = self.proxy_model.sortOrder()
             new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
             self.proxy_model.sort(logical_index, new_order)
 
+        # Дополнительные настройки для лучшего отображения
         header = self.table.horizontalHeader()
         header.setSectionsClickable(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
+        # Привязываем метод к классу
         self.on_header_clicked = on_header_clicked.__get__(self)
 
+        self.add_record_btn.clicked.connect(self.add_crew)
+        self.clear_form_btn.clicked.connect(self.clear_form)
+        self.delete_record_btn.clicked.connect(self.delete_selected)
         self.add_record_btn.clicked.connect(self.add_crew)
         self.clear_form_btn.clicked.connect(self.clear_form)
         self.delete_record_btn.clicked.connect(self.delete_selected)
@@ -390,6 +403,7 @@ class CrewTab(BaseTab):
             QMessageBox.information(self, "Отмена", "Изменения структуры отменены")
 
     def refresh_aircraft_combo(self):
+        """Обновление списка самолетов в комбобоксе"""
         self.aircraft_combo.clear()
         try:
             with self.engine.connect() as conn:
@@ -440,6 +454,7 @@ class CrewTab(BaseTab):
         crew_id = self.model.pk_value_at(idx.row())
         try:
             with self.engine.begin() as conn:
+                # Сначала проверяем, есть ли члены экипажа
                 result = conn.execute(
                     self.t["crew_member"].select().where(
                         self.t["crew_member"].c.crew_id == crew_id
@@ -463,4 +478,6 @@ class CrewTab(BaseTab):
             QMessageBox.critical(self, "Ошибка удаления", str(e))
 
     def clear_form(self):
+        """Очистка формы после успешного добавления"""
+        # Не очищаем комбобокс, чтобы можно было быстро добавить несколько экипажей
         pass

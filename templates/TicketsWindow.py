@@ -15,6 +15,7 @@ from sqlalchemy import (
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+
 # ===== Files =====
 from db.models import SATableModel
 from templates.BaseTab import BaseTab
@@ -39,6 +40,7 @@ class TicketsTab(BaseTab):
         self.seat_number_edit.setMaxLength(4)
         self.has_baggage_checkbox = QCheckBox("Есть багаж")
         self.has_baggage_checkbox.setChecked(False)
+        self.seat_number_edit.setMaxLength(3)
 
         self.form = QFormLayout(self.form_widget)
         self.form.addRow("Рейс:", self.flight_combo)
@@ -46,6 +48,7 @@ class TicketsTab(BaseTab):
         self.form.addRow("Номер места:", self.seat_number_edit)
         self.form.addRow("Багаж:", self.has_baggage_checkbox)
 
+        # Кнопки
         self.add_btn = QPushButton("Добавить билет (INSERT)")
         self.add_btn.clicked.connect(self.add_ticket)
         self.del_btn = QPushButton("Удалить выбранный билет")
@@ -55,27 +58,32 @@ class TicketsTab(BaseTab):
         self.btns.addWidget(self.add_btn)
         self.btns.addWidget(self.del_btn)
 
+        # Таблица
         self.table = QTableView()
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.table)
 
+        # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
         self.table.setModel(self.proxy_model)
         self.table.setSortingEnabled(True)
 
         def on_header_clicked(self, logical_index):
+            # Получаем и меняем текущее направление сортировки
             current_order = self.proxy_model.sortOrder()
             new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
             self.proxy_model.sort(logical_index, new_order)
 
+        # Дополнительные настройки для лучшего отображения
         header = self.table.horizontalHeader()
         header.setSectionsClickable(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
+        # Привязываем метод к классу
         self.on_header_clicked = on_header_clicked.__get__(self)
 
         self.add_record_btn.clicked.connect(self.add_ticket)
@@ -397,6 +405,7 @@ class TicketsTab(BaseTab):
             QMessageBox.information(self, "Отмена", "Изменения структуры отменены")
 
     def refresh_flights_combo(self):
+        """Обновление списка рейсов в комбобоксе"""
         self.flight_combo.clear()
         try:
             with self.engine.connect() as conn:
@@ -410,6 +419,7 @@ class TicketsTab(BaseTab):
             QMessageBox.critical(self, "Ошибка загрузки рейсов", str(e))
 
     def refresh_passengers_combo(self):
+        """Обновление списка пассажиров в комбобоксе"""
         self.passenger_combo.clear()
         try:
             with self.engine.connect() as conn:
@@ -443,6 +453,15 @@ class TicketsTab(BaseTab):
         passenger_id = self.passenger_combo.currentData()
         seat_number = self.seat_number_edit.text()
         has_baggage = self.has_baggage_checkbox.isChecked()
+
+        if not seat_number:
+            QMessageBox.warning(self, "Ввод", "Номер места обязателен")
+            return
+
+        if not (len(seat_number) >= 2 and len(seat_number) <= 4 and
+                seat_number[:-1].isdigit() and seat_number[-1].isalpha()):
+            QMessageBox.warning(self, "Ввод", "Номер места должен быть в формате: число + буква (например: 12A)")
+            return
 
         try:
             with self.engine.begin() as conn:
@@ -481,5 +500,7 @@ class TicketsTab(BaseTab):
             QMessageBox.critical(self, "Ошибка удаления", str(e))
 
     def clear_form(self):
+        """Очистка формы после успешного добавления"""
         self.seat_number_edit.clear()
         self.has_baggage_checkbox.setChecked(False)
+        # Не очищаем комбобоксы, чтобы можно было быстро добавить несколько билетов на один рейс

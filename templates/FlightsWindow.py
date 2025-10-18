@@ -10,12 +10,14 @@ from PySide6.QtWidgets import (
 )
 from styles.styles import apply_compact_table_view
 
+
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     insert, delete
 )
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+
 
 # ===== Files =====
 from db.models import SATableModel
@@ -64,6 +66,7 @@ class FlightsTab(BaseTab):
         self.form.addRow("Аэропорт прибытия:", self.arrival_airport_edit)
         self.form.addRow("Время полета:", self.flight_time_edit)
 
+        # Кнопки
         self.add_btn = QPushButton("Добавить рейс (INSERT)")
         self.add_btn.clicked.connect(self.add_flight)
         self.del_btn = QPushButton("Удалить выбранный рейс")
@@ -73,27 +76,32 @@ class FlightsTab(BaseTab):
         self.btns.addWidget(self.add_btn)
         self.btns.addWidget(self.del_btn)
 
+        # Таблица
         self.table = QTableView()
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.table)
 
+        # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
         self.table.setModel(self.proxy_model)
         self.table.setSortingEnabled(True)
 
         def on_header_clicked(self, logical_index):
+            # Получаем и меняем текущее направление сортировки
             current_order = self.proxy_model.sortOrder()
             new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
             self.proxy_model.sort(logical_index, new_order)
 
+        # Дополнительные настройки для лучшего отображения
         header = self.table.horizontalHeader()
         header.setSectionsClickable(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
+        # Привязываем метод к классу
         self.on_header_clicked = on_header_clicked.__get__(self)
 
         self.add_record_btn.clicked.connect(self.add_flight)
@@ -417,6 +425,7 @@ class FlightsTab(BaseTab):
             QMessageBox.information(self, "Отмена", "Изменения структуры отменены")
 
     def refresh_aircraft_combo(self):
+        """Обновление списка самолетов в комбобоксе"""
         self.aircraft_combo.clear()
         try:
             with self.engine.connect() as conn:
@@ -494,6 +503,7 @@ class FlightsTab(BaseTab):
             QMessageBox.critical(self, "Ошибка удаления", str(e))
 
     def clear_form(self):
+        """Очистка формы после успешного добавления"""
         self.departure_airport_edit.clear()
         self.arrival_airport_edit.clear()
         self.flight_time_edit.setValue(120)

@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QFormLayout, QLineEdit, QPushButton,
     QMessageBox, QSpinBox, QTableView, QHeaderView, QComboBox, QDialog, QDialogButtonBox, QLabel, QCheckBox
 )
+from styles.styles import apply_compact_table_view
 
 # ===== SQLAlchemy =====
 from sqlalchemy import insert, delete
@@ -79,27 +80,32 @@ class AircraftTab(BaseTab):
         self.btns.addWidget(self.add_btn)
         self.btns.addWidget(self.del_btn)
 
+        # Таблица
         self.table = QTableView()
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.table)
 
+        # Добавляем прокси-модель для фильтрации и сортировки
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
         self.table.setModel(self.proxy_model)
         self.table.setSortingEnabled(True)
 
         def on_header_clicked(self, logical_index):
+            # Получаем и меняем текущее направление сортировки
             current_order = self.proxy_model.sortOrder()
             new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
             self.proxy_model.sort(logical_index, new_order)
 
+        # Дополнительные настройки для лучшего отображения
         header = self.table.horizontalHeader()
         header.setSectionsClickable(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
+        # Привязываем метод к классу
         self.on_header_clicked = on_header_clicked.__get__(self)
 
         self.add_record_btn.clicked.connect(self.add_aircraft)
@@ -467,6 +473,7 @@ class AircraftTab(BaseTab):
             QMessageBox.critical(self, "Ошибка удаления", str(e))
 
     def clear_form(self):
+        """Очистка формы после успешного добавления"""
         self.model_edit.clear()
         self.year_edit.setValue(2000)
         self.seats_edit.setValue(150)
