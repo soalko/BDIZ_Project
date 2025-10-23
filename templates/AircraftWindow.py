@@ -79,7 +79,6 @@ class AircraftTab(BaseTab):
         self.update_ui_for_mode()
 
     def load_table_structure(self):
-        """Загружает структуру таблицы - столбцы как строки"""
         try:
             from PySide6.QtGui import QStandardItemModel, QStandardItem
 
@@ -87,14 +86,13 @@ class AircraftTab(BaseTab):
             structure_model = QStandardItemModel()
             structure_model.setHorizontalHeaderLabels(["Название столбца", "Тип данных", "Ограничения"])
 
-            # Получаем информацию о столбцах таблицы
             table = self.tables["aircraft"]
+
             for i, column in enumerate(table.columns):
-                # Добавляем строку с информацией о столбце
                 row_items = [
-                    QStandardItem(column.name),  # Название столбца
-                    QStandardItem(str(column.type)),  # Тип данных
-                    QStandardItem(self._get_column_constraints(column))  # Ограничения
+                    QStandardItem(column.name),
+                    QStandardItem(str(column.type)),
+                    QStandardItem(self._get_column_constraints(column))
                 ]
 
                 # Сохраняем имя столбца в данных для последующего использования

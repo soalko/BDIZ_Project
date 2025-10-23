@@ -20,8 +20,8 @@ class BaseTab(QWidget):
         self.engine = engine
         self.tables = tables
         self.current_mode = AppMode.READ
+        self.table = ""
 
-        # Панель инструментов для всех режимов
         self.tool_panel = QWidget()
         self.tool_layout = QHBoxLayout(self.tool_panel)
         self.tool_layout.setContentsMargins(0, 0, 0, 0)
@@ -54,14 +54,9 @@ class BaseTab(QWidget):
         self.add_column_btn = QPushButton("Добавить столбец")
         self.delete_column_btn = QPushButton("Удалить столбец")
         self.edit_column_btn = QPushButton("Изменить столбец")
-        self.save_structure_btn = QPushButton("Сохранить структуру")
-        self.cancel_structure_btn = QPushButton("Отменить изменения")
         self.edit_buttons_layout.addWidget(self.add_column_btn)
         self.edit_buttons_layout.addWidget(self.delete_column_btn)
         self.edit_buttons_layout.addWidget(self.edit_column_btn)
-        self.edit_buttons_layout.addWidget(self.save_structure_btn)
-        self.edit_buttons_layout.addWidget(self.cancel_structure_btn)
-        self.connect_buttons()
 
         self.structure_table = QTableView()
         self.structure_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
@@ -101,15 +96,21 @@ class BaseTab(QWidget):
         self.add_layout.setContentsMargins(0, 0, 0, 0)
         self.add_layout.addStretch()
 
+        # Общее
+
         self.main_layout = QVBoxLayout(self)
         self.main_layout.addWidget(self.tool_panel)
+        self.connect_buttons()
 
     def connect_buttons(self):
+        #чтение
+
+        #редактирование
         self.add_column_btn.clicked.connect(self.show_add_column_dialog)
         self.delete_column_btn.clicked.connect(self.delete_selected_column)
         self.edit_column_btn.clicked.connect(self.show_edit_column_dialog)
-        self.save_structure_btn.clicked.connect(self.save_structure_changes)
-        self.cancel_structure_btn.clicked.connect(self.cancel_structure_changes)
+
+        #добавление
 
     def load_table_structure(self):
         pass
@@ -122,12 +123,10 @@ class BaseTab(QWidget):
             constraints.append("PRIMARY KEY")
         if column.unique:
             constraints.append("UNIQUE")
-        # Можно добавить проверку других ограничений, если нужно
 
         return ", ".join(constraints) if constraints else "нет"
 
     def on_structure_column_selected(self, index):
-        """Обработчик выбора столбца в структуре"""
         if index.isValid():
             self.delete_column_btn.setEnabled(True)
             self.edit_column_btn.setEnabled(True)
@@ -136,7 +135,6 @@ class BaseTab(QWidget):
             self.edit_column_btn.setEnabled(False)
 
     def show_add_column_dialog(self):
-        """Показывает диалог добавления столбца"""
         dialog = QDialog(self)
         dialog.setWindowTitle("Добавить столбец")
         layout = QVBoxLayout(dialog)
@@ -145,7 +143,6 @@ class BaseTab(QWidget):
         name_edit = QLineEdit()
         layout.addWidget(name_edit)
 
-        # Выбор типа данных
         layout.addWidget(QLabel("Тип данных:"))
         type_combo = QComboBox()
         type_combo.addItems([
@@ -154,7 +151,6 @@ class BaseTab(QWidget):
         ])
         layout.addWidget(type_combo)
 
-        # Чекбоксы для ограничений
         check_not_null = QCheckBox("NOT NULL")
         check_unique = QCheckBox("UNIQUE")
         check_foreign = QCheckBox("FOREIGN KEY")
@@ -165,35 +161,30 @@ class BaseTab(QWidget):
         layout.addWidget(check_foreign)
         layout.addWidget(check_check)
 
-        # Поле для условия CHECK
         layout.addWidget(QLabel("Условие CHECK:"))
         check_condition_edit = QLineEdit()
         check_condition_edit.setEnabled(False)
         layout.addWidget(check_condition_edit)
 
-        # Включаем поле CHECK только при выборе чекбокса
         check_check.toggled.connect(check_condition_edit.setEnabled)
 
-        # Комбобокс для выбора таблицы при FOREIGN KEY
         foreign_table_combo = QComboBox()
         foreign_table_combo.setEnabled(False)
         layout.addWidget(QLabel("Связанная таблица:"))
         layout.addWidget(foreign_table_combo)
 
-        # Заполняем список таблиц
         if self.add_table:
             for table_name in self.tables.keys():
                 foreign_table_combo.addItem(table_name)
 
-        # Включаем комбобокс только при выборе FOREIGN KEY
         check_foreign.toggled.connect(foreign_table_combo.setEnabled)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             self.add_column_to_structure(
                 name_edit.text().strip(),
                 type_combo.currentText(),
@@ -212,7 +203,6 @@ class BaseTab(QWidget):
             QMessageBox.warning(self, "Ошибка", "Выберите столбец для редактирования")
             return
 
-        # Получаем выбранную строку
         model = self.structure_table.model()
         row = index.row()
         column_name = model.data(model.index(row, 0))  # Название столбца из второго столбца
@@ -269,44 +259,54 @@ class BaseTab(QWidget):
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
-        if dialog.exec() == QDialog.Accepted:
-            QMessageBox.information(self, "Редактирование", f"Столбец '{name_edit.text()}' изменен")
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.edit_column(
+                name_edit.text().strip(),
+                type_combo.currentText(),
+                check_not_null.isChecked(),
+                check_unique.isChecked(),
+                check_foreign.isChecked(),
+                foreign_table_combo.currentText() if check_foreign.isChecked() else None,
+                check_check.isChecked(),
+                check_condition_edit.text() if check_check.isChecked() else None
+            )
 
     def add_column_to_structure(self, name, data_type, not_null, unique, foreign_key, foreign_table, check_constraint,
                                 check_condition):
-        """Добавляет столбец в структуру"""
         if not name:
             QMessageBox.warning(self, "Ошибка", "Введите название столбца")
             return
 
         try:
-            constraints = []
-            if not_null:
-                constraints.append("NOT NULL")
-            if unique:
-                constraints.append("UNIQUE")
-            if foreign_key and foreign_table:
-                constraints.append(f"FOREIGN KEY REFERENCES {foreign_table}")
-            if check_constraint and check_condition:
-                constraints.append(f"CHECK ({check_condition})")
+            sql_parts = [f'ALTER TABLE {self.table} ADD COLUMN {name} {data_type.upper()}']
 
-            constraint_text = ", ".join(constraints)
+            # Добавляем ограничения
+            if not_null:
+                sql_parts.append("NOT NULL")
+            if unique:
+                sql_parts.append("UNIQUE")
+            if foreign_key and foreign_table:
+                sql_parts.append(f"REFERENCES {foreign_table}({name})")
+            if check_constraint and check_condition:
+                sql_parts.append(f"CHECK ({check_condition})")
+
+            sql = ' '.join(sql_parts)
+
+            # СЮДА
+
             QMessageBox.information(self, "Успех",
                                     f"Столбец '{name}' добавлен\n"
-                                    f"Тип: {data_type}\n"
-                                    f"Ограничения: {constraint_text if constraint_text else 'нет'}")
+                                    )
             self.load_table_structure()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить столбец: {str(e)}")
 
     def delete_selected_column(self):
-        """Удаляет выбранный столбец"""
         index = self.structure_table.currentIndex()
         if not index.isValid():
             QMessageBox.warning(self, "Ошибка", "Выберите столбец для удаления")
             return
 
-        # Получаем выбранную строку
         model = self.structure_table.model()
         row = index.row()
         column_name = model.data(model.index(row, 1))  # Название столбца из второго столбца
@@ -321,32 +321,18 @@ class BaseTab(QWidget):
         no_button = msg_box.addButton("Нет", QMessageBox.ButtonRole.NoRole)
         msg_box.setDefaultButton(no_button)
 
+        sql = f"ALTER TABLE {self.table} DROP COLUMN {column_name}"
+
+        # СЮДА
+
         msg_box.exec()
 
         if msg_box.clickedButton() == yes_button:
             QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' удален")
 
-    def save_structure_changes(self):
-        """Сохраняет изменения структуры"""
-        QMessageBox.information(self, "Сохранение", "Изменения структуры сохранены")
-
-    def cancel_structure_changes(self):
-        """Отменяет изменения структуры"""
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("Отмена изменений")
-        msg_box.setText("Вы уверены, что хотите отменить все изменения структуры?")
-        msg_box.setIcon(QMessageBox.Icon.Question)
-
-        # Создаем кнопки с русским текстом
-        yes_button = msg_box.addButton("Да", QMessageBox.ButtonRole.YesRole)
-        no_button = msg_box.addButton("Нет", QMessageBox.ButtonRole.NoRole)
-        msg_box.setDefaultButton(no_button)
-
-        msg_box.exec()
-
-        if msg_box.clickedButton() == yes_button:
-            self.load_table_structure()
-            QMessageBox.information(self, "Отмена", "Изменения структуры отменены")
+    def edit_column(self, name, data_type, not_null, unique, foreign_key, foreign_table, check_constraint,
+                                check_condition):
+        pass
 
     def add_form_rows(self):
         pass
@@ -371,16 +357,23 @@ class BaseTab(QWidget):
         self.tool_panel.setVisible(self.current_mode in [AppMode.READ, AppMode.EDIT, AppMode.ADD])
 
     def open_filter_dialog(self):
-        """Открывает диалог построения SQL и передает результат в обработчик"""
-
         dialog = SQLFilterDialog(self)
         if dialog.exec() == QDialog.Accepted:
-            sql_query = dialog.added_functions_list.toPlainText()
-            if sql_query:
-                self.apply_read_filter(sql_query)
+            self.get_filters(dialog)
 
     def apply_read_filter(self, sql_query: str):
         pass
+
+    def get_filters(self, dialog):
+        sql = []
+        sql.append(dialog.added_functions_list)
+        sql.append(dialog.where_conditions_list)
+        sql.append(dialog.order_columns_list)
+        sql.append(dialog.having_conditions_list)
+        sql.append(dialog.group_columns_list)
+        
+
+
 
 
 class SQLFilterDialog(QDialog):
