@@ -1,0 +1,208 @@
+QMainWindow, QWidget, QDialog {
+    font-size: 13px;
+}
+/* ===== текст и группы ===== */
+QLabel {
+    font-weight: 500;
+    padding: 3px;
+}
+QGroupBox {
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 10px;
+    margin-top: 12px;
+    padding-top: 18px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 0 12px;
+}
+/* ===== кнопки ===== */
+QPushButton {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 12px;
+    margin: 3px;
+    min-weight: 100px;
+}
+QPushButton:pressed {
+    padding: 11px 19px 9px 21px;
+}
+/* ===== поля ввода ===== */
+QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 23px;
+    font-size: 13px;
+}
+QComboBox {
+    padding-right: 30px;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+QComboBox::down-arrow {
+    width: 12px;
+    height: 12px;
+}
+QComboBox QAbstractItemView {
+    border-radius: 8px;
+}
+QComboBox QAbstractItemView::item {
+    padding: 8px 12px;
+}
+QSpinBox::up-button, QSpinBox::down-button,
+QDateEdit::up-button, QDateEdit::down-button,
+QTimeEdit::up-button, QTimeEdit::down-button {
+    width: 20px;
+    border-radius: 8px;
+    margin: 1px;
+}
+QSpinBox::up-arrow {
+    width: 8px;
+    height: 8px;
+}
+QSpinBox::down-arrow {
+
+    width: 8px;
+    height: 8px;
+}
+/* ===== чекбоксы ===== */
+QCheckBox {
+    spacing: 10px;
+    font-weight: 500;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+}
+/* ===== таблицы ===== */
+QTableView {
+    border-radius: 10px;
+    font-size: 12px;
+    padding: 4px;
+}
+
+QTableView::item {
+    padding: 10px;
+}
+QTableView::item:hover {
+    border-radius: 6px;
+}
+
+QTableView::item:selected {
+    font-weight: 600;
+    border-radius: 6px;
+}
+QHeaderView::section {
+    padding: 8px 10px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+QHeaderView::section:vertical:last {
+    border-bottom-left-radius: 10px;
+}
+
+QHeaderView::section:horizontal:last {
+    border-top-right-radius: 10px;
+}
+QTableCornerButton::section {
+
+    border-top-left-radius: 10px;
+}
+
+QTableView::item {
+    padding: 6px 10px;
+
+}
+
+QTableView::item:hover {
+    border-radius: 6px;
+}
+QTableView::item:selected {
+    border-radius: 6px;
+
+}
+/* ===== ВКЛАДКИ ===== */
+QTabWidget::pane {
+    border-radius: 10px;
+    margin: -1px;
+}
+
+QTabWidget::tab-bar {
+    alignment: center;
+}
+QTabBar::tab {
+    padding: 12px 24px;
+    margin: 2px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-weight: 500;
+}
+
+QTabBar::tab:selected {
+    margin-bottom: -1px;
+    font-weight: 600;
+}
+
+
+/* ===== SCROLLBARS ===== */
+QScrollBar:vertical {
+    width: 14px;
+    margin: 2px;
+    border-radius: 7px;
+}
+QScrollBar::handle:vertical {
+    border-radius: 7px;
+    min-height: 30px;
+    margin: 2px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+QScrollBar:horizontal {
+    border-radius: 7px;
+    margin: 2px;
+    min-width: 30px;
+    height: 14px;
+}
+
+QScrollBar::handle:horizontal {
+    border-radius: 7px;
+    min-width: 30px;
+    margin: 2px;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+/* ===== ФОРМЫ ===== */
+
+QFormLayout {
+    spacing: 10px;
+    margin: 12px;
+}
+/* ===== ЛОГ И СООБЩЕНИЯ ===== */
+
+QTextEdit {
+    border-radius: 8px;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    padding: 10px;
+}
+QMessageBox QLabel {
+    font-size: 13px;
+}
+
+QMessageBox QPushButton {
+    min-width: 80px;
+}
