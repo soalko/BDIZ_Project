@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 )
 from styles.styles import apply_compact_table_view
 
-
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     insert, delete
@@ -14,12 +13,10 @@ from sqlalchemy import (
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-
 # ===== Files =====
 from db.models import SATableModel
 from templates.BaseTab import BaseTab
 from templates.modes import AppMode
-
 
 
 # -------------------------------
@@ -28,6 +25,8 @@ from templates.modes import AppMode
 class CrewMembersTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
         super().__init__(engine, tables, parent)
+
+        self.table = "crew_members"
 
         self.model = SATableModel(engine, self.tables["crew_member"], self)
 
@@ -41,6 +40,14 @@ class CrewMembersTab(BaseTab):
         self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.add_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.read_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSortingEnabled(True)
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
@@ -103,7 +110,6 @@ class CrewMembersTab(BaseTab):
         self.job_position_edit.setMaxLength(50)
         self.add_form_layout.addRow("Экипаж:", self.crew_combo)
         self.add_form_layout.addRow("Должность:", self.job_position_edit)
-
 
     def update_ui_for_mode(self):
         super().update_ui_for_mode()

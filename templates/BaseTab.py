@@ -8,19 +8,21 @@ from PySide6.QtWidgets import (
 )
 
 from PySide6.QtCore import (Qt)
+from typing import List
+from sqlalchemy import text
 
 from templates.modes import AppMode
 from styles import apply_compact_table_view
 
 
 class BaseTab(QWidget):
-    def __init__(self, engine, tables, parent=None):
+    def __init__(self, engine, tables, table, parent=None):
         super().__init__(parent)
 
         self.engine = engine
         self.tables = tables
         self.current_mode = AppMode.READ
-        self.table = ""
+        self.table = table
 
         self.tool_panel = QWidget()
         self.tool_layout = QHBoxLayout(self.tool_panel)
@@ -28,18 +30,15 @@ class BaseTab(QWidget):
 
         # Элементы для режима чтения
         self.read_widgets = QWidget()
-        self.read_layout = QHBoxLayout(self.read_widgets)
-
-        self.sort_combo = QComboBox()
-        self.register_combo = QComboBox()
-        self.join_btn = QPushButton("JOIN")
-        self.filter_edit = QLineEdit()
-        self.filter_edit.setPlaceholderText("Фильтр...")
+        self.read_layout = QVBoxLayout(self.read_widgets)
 
         # кнопка фильтрации для режима чтения
         self.filter_button = QPushButton("Фильтрация")
         self.filter_button.clicked.connect(self.open_filter_dialog)
         self.read_layout.addWidget(self.filter_button)
+
+        self.read_table = QTableView()
+        self.read_layout.addWidget(self.read_table)
 
         self.read_layout.setContentsMargins(0, 0, 0, 0)
         self.read_layout.addStretch()
@@ -103,14 +102,14 @@ class BaseTab(QWidget):
         self.connect_buttons()
 
     def connect_buttons(self):
-        #чтение
+        # чтение
 
-        #редактирование
+        # редактирование
         self.add_column_btn.clicked.connect(self.show_add_column_dialog)
         self.delete_column_btn.clicked.connect(self.delete_selected_column)
         self.edit_column_btn.clicked.connect(self.show_edit_column_dialog)
 
-        #добавление
+        # добавление
 
     def load_table_structure(self):
         pass
@@ -331,7 +330,7 @@ class BaseTab(QWidget):
             QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' удален")
 
     def edit_column(self, name, data_type, not_null, unique, foreign_key, foreign_table, check_constraint,
-                                check_condition):
+                    check_condition):
         pass
 
     def add_form_rows(self):
@@ -357,28 +356,251 @@ class BaseTab(QWidget):
         self.tool_panel.setVisible(self.current_mode in [AppMode.READ, AppMode.EDIT, AppMode.ADD])
 
     def open_filter_dialog(self):
-        dialog = SQLFilterDialog(self)
-        if dialog.exec() == QDialog.Accepted:
+        dialog = SQLFilterDialog(self, self.table)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             self.get_filters(dialog)
 
-    def apply_read_filter(self, sql_query: str):
-        pass
+    def get_table_columns(self, table_name: str) -> List[str]:
+        """Получает список колонок для указанной таблицы из базы данных"""
+        try:
+            with self.engine.connect() as conn:
+                if self.engine.dialect.name == 'postgresql':
+                    query = text(
+                        """SELECT column_name
+                           FROM information_schema.columns
+                           WHERE table_name = :table_name
+                           ORDER BY ordinal_position""")
+                    result = conn.execute(query, {'table_name': table_name})
+
+                columns = [row[0] for row in result]
+                return columns
+        except Exception as e:
+            print(f"Ошибка при получении колонок таблицы {table_name}: {e}")
+
+            return ["id", "name", "created_at"]
+
+    def parse_select_columns(self, dialog):
+        select_parts = []
+
+        for column_name, checkbox in dialog.column_checkboxes.items():
+            if checkbox.isChecked():
+                select_parts.append(column_name)
+
+        functions_text = dialog.added_functions_list.toPlainText().strip()
+        if functions_text:
+            function_lines = functions_text.split('\n')
+            select_parts.extend(function_lines)
+
+        return select_parts
+
+    def parse_where_conditions(self, dialog):
+        where_text = dialog.where_conditions_list.toPlainText().strip()
+        if where_text:
+            conditions = where_text.replace("WHERE ", "").split("\nAND ")
+            return conditions
+        return []
+
+    def parse_order_by(self, dialog):
+        order_text = dialog.order_columns_list.toPlainText().strip()
+        if order_text:
+            order_parts = order_text.replace("ORDER BY ", "").split(", ")
+            return order_parts
+        return []
+
+    def parse_group_by(self, dialog):
+        group_text = dialog.group_columns_list.toPlainText().strip()
+        if group_text:
+            group_parts = group_text.replace("GROUP BY ", "").split(", ")
+            return group_parts
+        return []
+
+    def parse_having_conditions(self, dialog):
+        having_text = dialog.having_conditions_list.toPlainText().strip()
+        if having_text:
+            conditions = having_text.replace("HAVING ", "").split("\nAND ")
+            return conditions
+        return []
+
+    def parse_joins(self, dialog):
+        if hasattr(dialog, 'joins_list'):
+            joins_text = dialog.joins_list.toPlainText().strip()
+            if joins_text:
+                join_lines = joins_text.split('\n')
+                return join_lines
+        return []
+
+    def parse_combo_boxes(self, dialog):
+        """Парсит текущие значения выпадающих списков"""
+        combo_values = {
+            'functions': {
+                'function': dialog.functions_combo.currentText(),
+                'column': dialog.function_column_combo.currentText(),
+                'alias': dialog.function_alias_edit.text().strip(),
+                'string_param': dialog.function_string_edit.text().strip(),
+                'column2': dialog.function_column2_combo.currentText()
+            },
+            'where': {
+                'column': dialog.where_column_combo.currentText(),
+                'operator': dialog.where_operator_combo.currentText(),
+                'value': dialog.where_value_edit.text().strip()
+            },
+            'group_by': {
+                'column': dialog.group_column_combo.currentText()
+            },
+            'having': {
+                'function': dialog.having_function_combo.currentText(),
+                'column': dialog.having_column_combo.currentText(),
+                'operator': dialog.having_operator_combo.currentText(),
+                'value': dialog.having_value_edit.text().strip()
+            },
+            'order_by': {
+                'column': dialog.order_column_combo.currentText(),
+                'direction': dialog.order_direction_combo.currentText()
+            },
+            'join': {
+                'type': getattr(dialog, 'join_type_combo', None).currentText() if hasattr(dialog,
+                                                                                          'join_type_combo') else "",
+                'table': getattr(dialog, 'join_table_combo', None).currentText() if hasattr(dialog,
+                                                                                            'join_table_combo') else "",
+                'main_column': getattr(dialog, 'join_main_column_combo', None).currentText() if hasattr(dialog,
+                                                                                                        'join_main_column_combo') else "",
+                'foreign_column': getattr(dialog, 'join_foreign_column_combo', None).currentText() if hasattr(dialog,
+                                                                                                              'join_foreign_column_combo') else ""
+            }
+        }
+        return combo_values
+
+    def parse_all_filters(self, dialog):
+        """Парсит все элементы фильтрации и возвращает структурированные данные"""
+        filters = {
+            'select': self.parse_select_columns(dialog),
+            'where': self.parse_where_conditions(dialog),
+            'order_by': self.parse_order_by(dialog),
+            'group_by': self.parse_group_by(dialog),
+            'having': self.parse_having_conditions(dialog),
+            'joins': self.parse_joins(dialog),
+            'current_values': self.parse_combo_boxes(dialog)
+        }
+
+        return filters
+
+    def build_sql_from_parsed_filters(self, parsed_filters):
+        """Строит SQL запрос из распарсенных фильтров"""
+        sql_parts = [f"SELECT "]
+
+        if parsed_filters['select']:
+            pts = parsed_filters['select']
+            print(pts)
+            for i in range(len(pts)):
+                if i == 0:
+                    sql_parts.append(f"{self.table}.{pts[i]}")
+                elif i != '' and "UPPER" not in pts[i] and "LOWER" not in pts[i] and "TRIM" not in pts[
+                    i] and "SUBSTRING" not in pts[i] and "LPAD" not in pts[i] and "RPAD" not in pts[
+                    i] and "CONCAT" not in pts[i]:
+                    sql_parts.append(f", {self.table}.{pts[i]}")
+                else:
+                    sql_parts.append(f", {pts[i]}")
+        else:
+            sql_parts.append("*")
+
+        print(sql_parts)
+
+        sql_parts.append(f"FROM {self.table}")
+
+        if parsed_filters['joins']:
+            sql_parts.extend(parsed_filters['joins'])
+
+        if parsed_filters['where']:
+            where_conditions = " AND ".join(parsed_filters['where'])
+            sql_parts.append(f"WHERE {where_conditions}")
+
+        if parsed_filters['group_by']:
+            group_columns = ", ".join(parsed_filters['group_by'])
+            sql_parts.append(f"GROUP BY {group_columns}")
+
+        if parsed_filters['having']:
+            having_conditions = " AND ".join(parsed_filters['having'])
+            sql_parts.append(f"HAVING {having_conditions}")
+
+        if parsed_filters['order_by']:
+            order_columns = ", ".join(parsed_filters['order_by'])
+            sql_parts.append(f"ORDER BY {order_columns}")
+
+        return " ".join(sql_parts)
+
+    def execute_sql_query(self, sql_query):
+        """Выполняет SQL запрос и отображает результаты"""
+        try:
+            with self.engine.begin() as conn:
+                result = conn.execute(text(sql_query))
+
+                from PySide6.QtGui import QStandardItemModel, QStandardItem
+                model = QStandardItemModel()
+
+                column_names = result.keys()
+                model.setHorizontalHeaderLabels(column_names)
+
+                for row in result:
+                    row_items = []
+                    for value in row:
+                        item = QStandardItem(str(value) if value is not None else "")
+                        row_items.append(item)
+                    model.appendRow(row_items)
+
+                self.read_table.setModel(model)
+
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка запроса\n",
+                                 f"Некорректный запрос! \n\n"
+                                 f"Запрос:\n{sql_query}\n\nЛог ошибки: {str(e)}")
 
     def get_filters(self, dialog):
-        sql = []
-        sql.append(dialog.added_functions_list)
-        sql.append(dialog.where_conditions_list)
-        sql.append(dialog.order_columns_list)
-        sql.append(dialog.having_conditions_list)
-        sql.append(dialog.group_columns_list)
-        
+        try:
+            parsed_filters = self.parse_all_filters(dialog)
+            sql_query = self.build_sql_from_parsed_filters(parsed_filters)
 
+            self.execute_sql_query(sql_query)
 
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка при обработке фильтров: {str(e)}")
+
+    def _update_conditions_with_table(self, conditions, table_name):
+        """Добавляет имя таблицы к колонкам в условиях"""
+        table_columns = self.get_table_columns(table_name)
+
+        for column in table_columns:
+            conditions = conditions.replace(f" {column} ", f" {table_name}.{column} ")
+            conditions = conditions.replace(f"({column}", f"({table_name}.{column}")
+            conditions = conditions.replace(f"{column})", f"{table_name}.{column})")
+
+        return conditions
+
+    def _get_columns_from_function(self, func_text):
+        """Извлекает имена колонок из текста функции"""
+        current_table_columns = self.get_table_columns(self.table)
+        found_columns = []
+
+        for column in current_table_columns:
+            if column in func_text:
+                found_columns.append(column)
+
+        return found_columns
+
+    # Метод произвольного SQL запроса в BaseTab: (на всякий случай, может не пригодиться)
+    def execute_sql(self, sql_query):
+        try:
+            with self.engine.begin() as conn:
+                result = conn.execute(text(sql_query))
+                return result
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка SQL", f"Ошибка выполнения запроса: {str(e)}")
+            return None
 
 
 class SQLFilterDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, current_table=""):
         super().__init__(parent)
+        self.current_table = current_table
         self.setWindowTitle("Фильтры SQL")
         self.setMinimumSize(900, 600)
         self.setup_ui()
@@ -427,6 +649,13 @@ class SQLFilterDialog(QDialog):
         scroll_area.setWidget(main_widget)
         layout.addWidget(scroll_area)
 
+    def get_all_tables_columns(self) -> dict:
+        tables_columns = {}
+        for table_name in self.tables.keys():
+            columns = self.get_table_columns(table_name)
+            tables_columns[table_name] = columns
+        return tables_columns
+
     def create_select_tab(self):
         tab = QWidget()
         vbox = QVBoxLayout(tab)
@@ -437,7 +666,13 @@ class SQLFilterDialog(QDialog):
         self.columns_widget = QWidget()
         columns_layout = QVBoxLayout(self.columns_widget)
         self.column_checkboxes = {}
-        sample_columns = ["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"]
+
+        parent = self.parent()
+        if parent and hasattr(parent, 'get_table_columns'):
+            sample_columns = parent.get_table_columns(self.current_table)
+        else:
+            sample_columns = ["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"]
+
         for column_name in sample_columns:
             checkbox = QCheckBox(column_name)
             checkbox.setChecked(True)
@@ -469,7 +704,7 @@ class SQLFilterDialog(QDialog):
 
         self.function_column2_label = QLabel("Колонка 2:")
         self.function_column2_combo = QComboBox()
-        self.function_column_combo.addItems(sample_columns)
+        self.function_column2_combo.addItems(sample_columns)
 
         self.add_function_button = QPushButton("Добавить функцию")
         self.add_function_button.clicked.connect(self.add_function)
@@ -530,7 +765,14 @@ class SQLFilterDialog(QDialog):
         simple_layout = QHBoxLayout(simple_where)
 
         self.where_column_combo = QComboBox()
-        self.where_column_combo.addItems(["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"])
+
+        parent = self.parent()
+        if parent and hasattr(parent, 'get_table_columns'):
+            where_columns = parent.get_table_columns(self.current_table)
+            self.where_column_combo.addItems(where_columns)
+        else:
+            self.where_column_combo.addItems(["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"])
+
         self.where_operator_combo = QComboBox()
         self.where_operator_combo.addItems(["=", "!=", ">", "<", ">=", "<=",
                                             "LIKE", "IN", "~", "~*", "!~", "!~*"])
@@ -583,7 +825,13 @@ class SQLFilterDialog(QDialog):
         group_group = QGroupBox("GROUP BY - Группировка")
         group_layout = QVBoxLayout(group_group)
         self.group_column_combo = QComboBox()
-        self.group_column_combo.addItems(["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"])
+        parent = self.parent()
+        if parent and hasattr(parent, 'get_table_columns'):
+            group_columns = parent.get_table_columns(self.current_table)
+            self.group_column_combo.addItems(group_columns)
+        else:
+            self.group_column_combo.addItems(["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"])
+
         self.add_group_button = QPushButton("Добавить группировку")
         self.add_group_button.clicked.connect(self.add_group_column)
         self.group_columns_list = QTextEdit()
@@ -595,7 +843,13 @@ class SQLFilterDialog(QDialog):
         having_group = QGroupBox("HAVING - Условия для сгруппированных данных")
         having_layout = QVBoxLayout(having_group)
         self.having_column_combo = QComboBox()
-        self.having_column_combo.addItems(["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"])
+
+        if parent and hasattr(parent, 'get_table_columns'):
+            having_columns = parent.get_table_columns(self.current_table)
+            self.having_column_combo.addItems(having_columns)
+        else:
+            self.having_column_combo.addItems(["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"])
+
         self.having_operator_combo = QComboBox()
         self.having_operator_combo.addItems([">", "<", "=", "!=", ">=", "<="])
         self.having_function_combo = QComboBox()
@@ -626,32 +880,66 @@ class SQLFilterDialog(QDialog):
     def create_join_tab(self):
         tab = QWidget()
         vbox = QVBoxLayout(tab)
+
         join_group = QGroupBox("JOIN - Объединение таблиц")
         join_layout = QVBoxLayout(join_group)
+
+        join_layout.addWidget(QLabel("Тип JOIN:"))
         self.join_type_combo = QComboBox()
         self.join_type_combo.addItems(["INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN"])
+        join_layout.addWidget(self.join_type_combo)
+
+        join_layout.addWidget(QLabel("Таблица для JOIN:"))
         self.join_table_combo = QComboBox()
-        self.join_table_combo.addItems(["Самолеты", "Рейсы", "Пассажиры", "Билеты", "Экипажи", "Члены экипажа"])
-        self.join_column1_combo = QComboBox()
-        self.join_column1_combo.addItems(["РЕЙС1"])
-        self.join_column2_combo = QComboBox()
-        self.join_column2_combo.addItems(["РЕЙС2"])
+
+        parent = self.parent()
+        if parent and hasattr(parent, 'tables') and parent.tables:
+            for table_name in parent.tables.keys():
+                if table_name != self.current_table:  # Исключаем текущую таблицу
+                    self.join_table_combo.addItem(table_name)
+        else:
+            sample_tables = ["flights", "passengers", "tickets", "crew", "crew_members"]
+            for table in sample_tables:
+                if table != self.current_table:
+                    self.join_table_combo.addItem(table)
+
+        join_layout.addWidget(self.join_table_combo)
+
+        join_layout.addWidget(QLabel(f"Колонка из {self.current_table}:"))
+        self.join_main_column_combo = QComboBox()
+
+        if parent and hasattr(parent, 'get_table_columns'):
+            main_columns = parent.get_table_columns(self.current_table)
+            self.join_main_column_combo.addItems(main_columns)
+        else:
+            main_columns = ["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"]
+            self.join_main_column_combo.addItems(main_columns)
+
+        self.join_main_column_combo.addItems(main_columns)
+        join_layout.addWidget(self.join_main_column_combo)
+
+        join_layout.addWidget(QLabel("Колонка из присоединяемой таблицы:"))
+        self.join_foreign_column_combo = QComboBox()
+
+        # Заполняем колонками из присоединяемой таблицы
+        foreign_columns = ["aircraft_id", "flight_id", "passenger_id", "ticket_id", "crew_id"]
+        self.join_foreign_column_combo.addItems(foreign_columns)
+        join_layout.addWidget(self.join_foreign_column_combo)
+
         self.add_join_button = QPushButton("Добавить JOIN")
         self.add_join_button.clicked.connect(self.add_join)
+        join_layout.addWidget(self.add_join_button)
+
+        join_layout.addWidget(QLabel("Добавленные JOIN:"))
         self.joins_list = QTextEdit()
         self.joins_list.setMaximumHeight(150)
-        self.joins_list.setPlaceholderText("Добавленные JOIN")
-        join_layout.addWidget(QLabel("Тип JOIN:"))
-        join_layout.addWidget(self.join_type_combo)
-        join_layout.addWidget(QLabel("Таблица:"))
-        join_layout.addWidget(self.join_table_combo)
-        join_layout.addWidget(QLabel("Колонка 1:"))
-        join_layout.addWidget(self.join_column1_combo)
-        join_layout.addWidget(QLabel("Колонка 2:"))
-        join_layout.addWidget(self.join_column2_combo)
-        join_layout.addWidget(self.add_join_button)
-        join_layout.addWidget(QLabel("Текущие JOIN:"))
+        self.joins_list.setPlaceholderText("Добавленные JOIN будут отображаться здесь")
         join_layout.addWidget(self.joins_list)
+
+        self.clear_joins_button = QPushButton("Очистить все JOIN")
+        self.clear_joins_button.clicked.connect(self.clear_joins)
+        join_layout.addWidget(self.clear_joins_button)
+
         vbox.addWidget(join_group)
         return tab
 
@@ -715,13 +1003,26 @@ class SQLFilterDialog(QDialog):
 
     def add_join(self):
         join_type = self.join_type_combo.currentText()
-        table = self.join_table_combo.currentText()
-        col1 = self.join_column1_combo.currentText()
-        col2 = self.join_column2_combo.currentText()
-        join_text = f"aircraft {join_type} {table} ON {col1} = {col2}"
+        join_table = self.join_table_combo.currentText()
+        main_column = self.join_main_column_combo.currentText()
+        foreign_column = self.join_foreign_column_combo.currentText()
+
+        if not join_table or not main_column or not foreign_column:
+            QMessageBox.warning(self, "Ошибка", "Заполните все поля для JOIN")
+            return
+
+        join_text = f"{join_type} {join_table} ON {self.current_table}.{main_column} = {join_table}.{foreign_column}"
+
         current_text = self.joins_list.toPlainText()
-        current_text = (current_text + "\n" if current_text else "") + join_text
+        if current_text:
+            current_text += "\n" + join_text
+        else:
+            current_text = join_text
+
         self.joins_list.setPlainText(current_text)
+
+    def clear_joins(self):
+        self.joins_list.clear()
 
     def apply_filter(self):
         self.accept()

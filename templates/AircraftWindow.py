@@ -44,7 +44,7 @@ except ImportError:
 class AircraftTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
         super().__init__(engine, tables, parent)
-
+        self.table = "aircraft"
         self.model = SATableModel(engine, self.tables["aircraft"], self)
 
         self.add_record_btn.clicked.connect(self.add_aircraft)
@@ -57,6 +57,14 @@ class AircraftTab(BaseTab):
         self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.add_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.read_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSortingEnabled(True)
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
@@ -74,7 +82,6 @@ class AircraftTab(BaseTab):
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
         self.on_header_clicked = on_header_clicked.__get__(self)
-
 
         self.update_ui_for_mode()
 

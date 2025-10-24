@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 )
 from styles.styles import apply_compact_table_view
 
-
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     insert, delete
@@ -14,12 +13,10 @@ from sqlalchemy import (
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-
 # ===== Files =====
 from db.models import SATableModel
 from templates.BaseTab import BaseTab
 from templates.modes import AppMode
-
 
 
 # --------------------------------
@@ -28,6 +25,8 @@ from templates.modes import AppMode
 class TicketsTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
         super().__init__(engine, tables, parent)
+
+        self.table = "tickets"
 
         self.model = SATableModel(engine, self.tables["tickets"], self)
 
@@ -41,6 +40,14 @@ class TicketsTab(BaseTab):
         self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.add_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.read_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSortingEnabled(True)
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
@@ -58,7 +65,6 @@ class TicketsTab(BaseTab):
         self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
 
         self.on_header_clicked = on_header_clicked.__get__(self)
-
 
         self.refresh_flights_combo()
         self.refresh_passengers_combo()
@@ -129,7 +135,8 @@ class TicketsTab(BaseTab):
         self.passenger_combo.clear()
         try:
             with self.engine.connect() as conn:
-                result = conn.execute(self.tables["passengers"].select().order_by(self.tables["passengers"].c.passenger_id))
+                result = conn.execute(
+                    self.tables["passengers"].select().order_by(self.tables["passengers"].c.passenger_id))
                 for row in result:
                     passenger_type = "Зависимый" if row.is_dependent else "Независимый"
                     self.passenger_combo.addItem(

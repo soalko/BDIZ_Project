@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
 )
 from styles.styles import apply_compact_table_view
 
-
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     insert, delete
@@ -18,12 +17,10 @@ from sqlalchemy import (
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-
 # ===== Files =====
 from db.models import SATableModel
 from templates.BaseTab import BaseTab
 from templates.modes import AppMode
-
 
 
 # -------------------------------
@@ -32,6 +29,7 @@ from templates.modes import AppMode
 class FlightsTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
         super().__init__(engine, tables, parent)
+        self.table = "flights"
 
         self.model = SATableModel(engine, self.tables["flights"], self)
 
@@ -45,6 +43,14 @@ class FlightsTab(BaseTab):
         self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.add_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.read_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSortingEnabled(True)
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)

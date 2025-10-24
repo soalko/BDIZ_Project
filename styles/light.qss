@@ -56,7 +56,6 @@ QPushButton {
     font-weight: 600;
     font-size: 12px;
     margin: 3px;
-    min-weight: 100px;
 }
 
 QPushButton:hover {
