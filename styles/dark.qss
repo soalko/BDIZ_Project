@@ -35,7 +35,7 @@ QPushButton {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                               stop: 0 rgba(174, 207, 255, 0.35),
                               stop: 1 rgba(137, 180, 250, 0.28));
-    border: 2px solid rgba(137, 180, 250, 0.35);
+    border: 2px solid rgba(1, 1, 30, 0.35);
     color: #dbe6ff;
 }
 
@@ -43,16 +43,11 @@ QPushButton:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                               stop: 0 rgba(88, 134, 237, 0.28),
                               stop: 1 rgba(103, 127, 181, 0.28));
-    border: 2px solid rgba(203, 166, 247, 0.45);
-}
-
-QPushButton:focus {
-    outline: none;
-    border: 2px solid #01011E;
+    border: 2px solid rgba(1, 1, 30, 0.45);
 }
 
 QPushButton:pressed {
-    background: #030326;
+    background: rgba(44, 74, 125, 100);
     border: 2px solid #01011E;
 }
 
@@ -114,7 +109,7 @@ QTimeEdit::up-button, QTimeEdit::down-button {
 QSpinBox::up-button:hover, QSpinBox::down-button:hover,
 QDateEdit::up-button:hover, QDateEdit::down-button:hover,
 QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
-    background: #89b4fa;
+    background: #5A5B6D;
 }
 
 /* ===== ЧЕКБОКСЫ ===== */
@@ -124,7 +119,7 @@ QCheckBox {
 }
 
 QCheckBox::indicator {
-    border: 2px solid #01011E;
+    border: 2px solid #667DCD;
     background-color: #11111b;
 }
 
@@ -135,7 +130,7 @@ QCheckBox::indicator:hover {
 
 QCheckBox::indicator:checked {
     background-color: #a6e3a1;
-    border: 2px solid #a6e3a1;
+    border: 2px solid #667DCD;
 }
 
 

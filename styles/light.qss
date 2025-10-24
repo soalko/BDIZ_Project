@@ -2,11 +2,7 @@
 
 QMainWindow, QWidget, QDialog {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                          stop: 0 #8A9CF6,
-                          stop: 0.6 #4465F0,
-                          stop: 0.6 #B5BDF8,
-                          stop: 0.8 #E6E8FE,
-                          stop: 1 #FFFFFF);
+                              stop: 1 #FFFFFF, stop: 0 #FFFFFF);
 
     color: #000000;
     border: none;
@@ -21,9 +17,9 @@ QLabel {
 }
 
 QGroupBox {
-    border: 2px solid #d7dbe6;
+    border: 2px solid #3f8cff;
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 1 #FF99FF, stop: 0 #b8daff);
+                              stop: 1 #CFE4FA, stop: 0 #CFE4FA);
     color: #FFFFFF;
 }
 
@@ -36,31 +32,28 @@ QGroupBox::title {
 /* ===== КНОПКИ ===== */
 QPushButton {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #b8daff,
-                              stop: 1 #b8daff);
-    border: 2px solid #6699FF; /* тёмная обводка */
+                              stop: 0 #99CCFF,
+                              stop: 1 #99CCFF);
+    border: 2px solid #3085D8;
     color: #000000;
 }
 
 QPushButton:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #4465F0,
-                              stop: 1 #DACCF5);
-    border: 2px solid #CEE9F7;
-}
-
-QPushButton:focus {
-    outline: none;
-    border: 2px solid #01011E;
+                              stop: 0 #4C86F9,
+                              stop: 1 #81AAFB);
+    border: 2px solid #2B70F9;
 }
 
 QPushButton:pressed {
-    background: #FFCCFF;
-    border: 2px solid #01011E;
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                              stop: 0 #125EF4,
+                              stop: 1 #578DF7);
+    border: 2px solid #063797;
 }
 
 QPushButton:disabled {
-    background: #e0e4ee;
+    background: #D4D5E9;
     border: 2px solid #d1d7e6;
     color: #595B60;
 }
@@ -69,7 +62,7 @@ QPushButton:disabled {
 /* ===== ПОЛЯ ВВОДА ===== */
 QLineEdit, QSpinBox, QDateEdit, QTimeEdit, QComboBox, QTextEdit {
     background: #FFFFFF;
-    border: 2px solid #8A9CF6;
+    border: 2px solid #93BBF8;
     color: #000000;
     selection-background-color:#CEE9F7;
     selection-color: #ffffff;
@@ -82,8 +75,10 @@ QTimeEdit:focus, QComboBox:focus, QTextEdit:focus {
 }
 
 QComboBox::drop-down {
-    border-left: 2px solid #CCCCFF;
-    background: #FFFFFF;
+    border-left: 2px solid #489EF3;
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                              stop: 0 #FFFFFF,
+                              stop: 1 #99CCFF);
 }
 
 QComboBox QAbstractItemView {
@@ -99,21 +94,22 @@ QComboBox QAbstractItemView::item {
 }
 
 QComboBox QAbstractItemView::item:selected {
-    background-color: #A1B2F0;
+    background-color: #84B4F3;
     color: #000000;
 }
 
 QSpinBox::up-button, QSpinBox::down-button,
 QDateEdit::up-button, QDateEdit::down-button,
 QTimeEdit::up-button, QTimeEdit::down-button {
-    background: #f7fafc;
-    border: 1px solid #e1e5e9;
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                              stop: 0 #86BDF2, stop: 1 #FFFFFF);
+    border: 1px solid #CCCCCC;
 }
 
 QSpinBox::up-button:hover, QSpinBox::down-button:hover,
 QDateEdit::up-button:hover, QDateEdit::down-button:hover,
 QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
-    background: #edf2f7;
+    background: #5DAAF2;
 }
 
 /* ===== ЧЕКБОКСЫ ===== */
@@ -123,18 +119,18 @@ QCheckBox {
 }
 
 QCheckBox::indicator {
-    border: 2px solid #cfd5e2;
+    border: 2px solid #CFD5E2;
     background-color: #ffffff;
 }
 
 QCheckBox::indicator:hover {
-    border: 2px solid #00CCFF;
+    border: 2px solid #9BCBF1;
     background-color: #f1f5ff;
 }
 
 QCheckBox::indicator:checked {
     background-color: #18b671;
-    border: 2px solid #18b671;
+    border: 2px solid #CFD5E2;
 
 }
 
@@ -143,8 +139,8 @@ QCheckBox::indicator:checked {
 
 QTableView {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #b8daff,
-                              stop: 1 #CAB6EE);
+                              stop: 0 #EDEFFA,
+                              stop: 1 #EEF1F8);
     border: 2px solid #6666FF;
     gridline-color: #e4e7f0;
     selection-background-color: rgba(24, 182, 113, 0.22);
@@ -156,18 +152,9 @@ QTableView::item {
     border-bottom: 1px solid #eef1f7;
 }
 
-QTableView::item:hover {
-    background-color: rgba(24, 182, 113, 0.14);
-}
-
-QTableView::item:selected {
-    background-color: rgba(24, 182, 113, 0.22);
-    color: #1e2a1e;
-}
-
 QHeaderView::section {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                              stop: 0 #DACCF5, stop: 1 #DACCF5 );
+                              stop: 0 #A1BBEE, stop: 1 #52A5F7 );
 
     color: #000000;
     border: 1px solid #d7dbe6;
@@ -179,31 +166,28 @@ QTableCornerButton::section {
     border: 1px solid #d7dbe6;
 }
 
-QTableView::item {
-    border-bottom: 1px solid #eef1f7;
-}
 
 QTableView::item:hover {
-    background-color: rgba(112, 28, 237, 0.14); /* мягкий зелёный для лайт-темы */
+    background-color: rgba(127, 167, 245, 30);
 }
 
 QTableView::item:selected {
-    background-color: rgba(112, 28, 237, 0.22); /* тот же зелёный, чуть насыщеннее при выборе */
+    background-color: rgba(162, 190, 245,  120);
     color: #1e2a1e;
 }
 
 
 /* ===== ВКЛАДКИ ===== */
 QTabWidget::pane {
-    border: 2px solid #d7dbe6;
+    border: 2px solid #CFE6FC;
     background-color: #ffffff;
 }
 
 QTabBar::tab {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #eef1f7, stop: 1 #e3e7f1);
+                              stop: 0 #C6E0FC, stop: 1 #D6E8FB);
     color: #5b6374;
-    border: 2px solid #d7dbe6;
+    border: 2px solid #9DCBFB;
     border-bottom: none;
 }
 
@@ -252,7 +236,7 @@ QTextEdit {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                               stop: 1 #b8daff, stop: 0 #b8daff);
     border: 2px solid #8A9CF6;
-    color: #4a5160;
+    color: #000000;
 }
 
 QTextEdit:focus {
