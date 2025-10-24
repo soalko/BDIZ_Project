@@ -29,6 +29,7 @@ class TicketsTab(BaseTab):
         self.table = "tickets"
 
         self.model = SATableModel(engine, self.tables["tickets"], self)
+        self.update_model()
 
         self.add_record_btn.clicked.connect(self.add_ticket)
         self.clear_form_btn.clicked.connect(self.clear_form)
@@ -70,40 +71,6 @@ class TicketsTab(BaseTab):
         self.refresh_passengers_combo()
 
         self.update_ui_for_mode()
-
-    def load_table_structure(self):
-        """Загружает структуру таблицы - столбцы как строки"""
-        try:
-            from PySide6.QtGui import QStandardItemModel, QStandardItem
-
-            # Создаем модель для отображения структуры
-            structure_model = QStandardItemModel()
-            structure_model.setHorizontalHeaderLabels(["Название столбца", "Тип данных", "Ограничения"])
-
-            # Получаем информацию о столбцах таблицы
-            table = self.tables["tickets"]
-            for i, column in enumerate(table.columns):
-                # Добавляем строку с информацией о столбце
-                row_items = [
-                    QStandardItem(column.name),  # Название столбца
-                    QStandardItem(str(column.type)),  # Тип данных
-                    QStandardItem(self._get_column_constraints(column))  # Ограничения
-                ]
-
-                # Сохраняем имя столбца в данных для последующего использования
-                for item in row_items:
-                    item.setData(column.name, Qt.UserRole)
-
-                structure_model.appendRow(row_items)
-
-            self.structure_table.setModel(structure_model)
-            self.structure_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-            apply_compact_table_view(self.structure_table)
-
-            self.delete_column_btn.setEnabled(False)
-            self.edit_column_btn.setEnabled(False)
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка загрузки структуры", str(e))
 
     def add_form_rows(self):
         self.flight_combo = QComboBox()

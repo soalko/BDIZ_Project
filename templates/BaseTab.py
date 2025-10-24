@@ -1,3 +1,5 @@
+from email.policy import default
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QCheckBox,
     QPushButton, QFormLayout, QTableView,
@@ -111,8 +113,53 @@ class BaseTab(QWidget):
 
         # добавление
 
-    def load_table_structure(self):
+    def update_model(self):
+        from sqlalchemy import Table, MetaData
+
+        # Создаем объект метаданных
+        metadata = MetaData()
+
+        # Автоматически загружаем структуру таблицы из базы данных
+        self.tables[self.table] = Table(
+            self.table,
+            metadata,
+            autoload_with=self.engine
+        )
+
+    def update_tables(self):
         pass
+
+    def load_table_structure(self):
+        try:
+            from PySide6.QtGui import QStandardItemModel, QStandardItem
+
+            # Создаем модель для отображения структуры
+            structure_model = QStandardItemModel()
+            structure_model.setHorizontalHeaderLabels(["Название столбца", "Тип данных", "Ограничения"])
+
+            table = self.tables[self.table]
+
+            for i, column in enumerate(table.columns):
+                row_items = [
+                    QStandardItem(column.name),
+                    QStandardItem(str(column.type)),
+                    QStandardItem(self._get_column_constraints(column))
+                ]
+
+                # Сохраняем имя столбца в данных для последующего использования
+                for item in row_items:
+                    item.setData(column.name, Qt.UserRole)
+
+                structure_model.appendRow(row_items)
+
+            self.structure_table.setModel(structure_model)
+            self.structure_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+            apply_compact_table_view(self.structure_table)
+
+            self.delete_column_btn.setEnabled(False)
+            self.edit_column_btn.setEnabled(False)
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка загрузки структуры", str(e))
 
     def _get_column_constraints(self, column):
         constraints = []
@@ -160,6 +207,10 @@ class BaseTab(QWidget):
         layout.addWidget(check_foreign)
         layout.addWidget(check_check)
 
+        layout.addWidget(QLabel("Значение по умолчанию:"))
+        default_edit = QLineEdit()
+        layout.addWidget(default_edit)
+
         layout.addWidget(QLabel("Условие CHECK:"))
         check_condition_edit = QLineEdit()
         check_condition_edit.setEnabled(False)
@@ -188,6 +239,7 @@ class BaseTab(QWidget):
                 name_edit.text().strip(),
                 type_combo.currentText(),
                 check_not_null.isChecked(),
+                default_edit.text(),
                 check_unique.isChecked(),
                 check_foreign.isChecked(),
                 foreign_table_combo.currentText() if check_foreign.isChecked() else None,
@@ -225,33 +277,8 @@ class BaseTab(QWidget):
         layout.addWidget(type_combo)
 
         check_not_null = QCheckBox("NOT NULL")
-        check_unique = QCheckBox("UNIQUE")
-        check_foreign = QCheckBox("FOREIGN KEY")
-        check_check = QCheckBox("CHECK")
 
         layout.addWidget(check_not_null)
-        layout.addWidget(check_unique)
-        layout.addWidget(check_foreign)
-        layout.addWidget(check_check)
-
-        # Поле для условия CHECK
-        layout.addWidget(QLabel("Условие CHECK:"))
-        check_condition_edit = QLineEdit()
-        check_condition_edit.setEnabled(False)
-        layout.addWidget(check_condition_edit)
-
-        check_check.toggled.connect(check_condition_edit.setEnabled)
-
-        foreign_table_combo = QComboBox()
-        foreign_table_combo.setEnabled(False)
-        layout.addWidget(QLabel("Связанная таблица:"))
-        layout.addWidget(foreign_table_combo)
-
-        if self.add_table:
-            for table_name in self.tables.keys():
-                foreign_table_combo.addItem(table_name)
-
-        check_foreign.toggled.connect(foreign_table_combo.setEnabled)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(dialog.accept)
@@ -260,17 +287,13 @@ class BaseTab(QWidget):
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.edit_column(
+                column_name,
                 name_edit.text().strip(),
                 type_combo.currentText(),
-                check_not_null.isChecked(),
-                check_unique.isChecked(),
-                check_foreign.isChecked(),
-                foreign_table_combo.currentText() if check_foreign.isChecked() else None,
-                check_check.isChecked(),
-                check_condition_edit.text() if check_check.isChecked() else None
+                check_not_null.isChecked()
             )
 
-    def add_column_to_structure(self, name, data_type, not_null, unique, foreign_key, foreign_table, check_constraint,
+    def add_column_to_structure(self, name, data_type, not_null, default, unique, foreign_key, foreign_table, check_constraint,
                                 check_condition):
         if not name:
             QMessageBox.warning(self, "Ошибка", "Введите название столбца")
@@ -281,22 +304,23 @@ class BaseTab(QWidget):
 
             # Добавляем ограничения
             if not_null:
-                sql_parts.append("NOT NULL")
+                sql_parts.append(f"NOT NULL DEFAULT {default}")
             if unique:
                 sql_parts.append("UNIQUE")
             if foreign_key and foreign_table:
                 sql_parts.append(f"REFERENCES {foreign_table}({name})")
             if check_constraint and check_condition:
-                sql_parts.append(f"CHECK ({check_condition})")
+                sql_parts.append(f"CHECK ({name} {check_condition})")
 
             sql = ' '.join(sql_parts)
 
-            # СЮДА
+            self.execute_sql(sql)
 
             QMessageBox.information(self, "Успех",
                                     f"Столбец '{name}' добавлен\n"
                                     )
             self.load_table_structure()
+            self.update_model()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить столбец: {str(e)}")
 
@@ -308,7 +332,7 @@ class BaseTab(QWidget):
 
         model = self.structure_table.model()
         row = index.row()
-        column_name = model.data(model.index(row, 1))  # Название столбца из второго столбца
+        column_name = model.data(model.index(row, 0))
 
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("Удаление столбца")
@@ -322,16 +346,46 @@ class BaseTab(QWidget):
 
         sql = f"ALTER TABLE {self.table} DROP COLUMN {column_name}"
 
-        # СЮДА
+        try:
+            self.execute_sql(sql)
 
-        msg_box.exec()
+            msg_box.exec()
 
-        if msg_box.clickedButton() == yes_button:
-            QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' удален")
+            if msg_box.clickedButton() == yes_button:
+                QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' удален")
+            self.update_model()
+            self.model.refresh()
+            self.add_table.setModel(self.model)
+            self.window().refresh_combos()
+        except Exception as e:
+            QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' не удален. Ошибка\n {e}")
 
-    def edit_column(self, name, data_type, not_null, unique, foreign_key, foreign_table, check_constraint,
-                    check_condition):
-        pass
+    def edit_column(self, oldname, name, data_type, not_null):
+        if not name:
+            QMessageBox.warning(self, "Ошибка", "Введите название столбца")
+            return
+
+        try:
+            sql = f"ALTER TABLE {self.table} "
+            sql_parts = []
+            if oldname != name:
+                self.execute_sql(f"ALTER TABLE {self.table} RENAME COLUMN {oldname} TO {name}")
+            sql_parts.append(f"ALTER COLUMN {name} TYPE {data_type}")
+            if not_null:
+                sql_parts.append(f"ALTER COLUMN {name} SET NOT NULL")
+            else:
+                sql_parts.append(f"ALTER COLUMN {name} DROP NOT NULL")
+            sql += ', '.join(sql_parts)
+
+            self.execute_sql(sql)
+
+            QMessageBox.information(self, "Успех",
+                                    f"Столбец '{name}' изменен\n"
+                                    )
+            self.load_table_structure()
+            self.update_model()
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось изменить столбец: {str(e)}")
 
     def add_form_rows(self):
         pass

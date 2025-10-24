@@ -160,7 +160,6 @@ class MainWindow(QMainWindow):
             self.tabs.addTab(self.crew_members_tab, "Члены экипажа")
             print("Crew members tab created")
 
-        self.refresh_combos()
         self.refresh_all_tabs()
 
     def refresh_all_models(self):
