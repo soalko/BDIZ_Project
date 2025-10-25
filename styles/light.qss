@@ -36,6 +36,10 @@ QPushButton {
                               stop: 1 #99CCFF);
     border: 2px solid #3085D8;
     color: #000000;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 12px;
+    margin: 3px;
 }
 
 QPushButton:hover {

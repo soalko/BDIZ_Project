@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     MetaData, Table, Column, Integer, String, Date, Time, Boolean,
-    ForeignKey, UniqueConstraint, CheckConstraint, select
+    ForeignKey, UniqueConstraint, CheckConstraint, select, inspect
 )
 
 from sqlalchemy.engine import Engine
@@ -36,8 +36,40 @@ class SATableModel(QAbstractTableModel):
         self.beginResetModel()
         try:
             with self.engine.connect() as conn:
-                res = conn.execute(select(self.table).order_by(self.pk_col.asc()))
-                self._rows = [dict(r._mapping) for r in res]
+                # Получаем актуальные столбцы из базы данных
+                table_name = self.table.name
+                inspector = inspect(self.engine)
+                actual_columns = inspector.get_columns(table_name)
+                actual_column_names = [col['name'] for col in actual_columns]
+
+                # Обновляем список столбцов модели, если они изменились
+                if self.columns != actual_column_names:
+                    self.columns = actual_column_names
+
+                # Обновляем первичный ключ
+                pk_columns = inspector.get_pk_constraint(table_name)['constrained_columns']
+                if pk_columns:
+                    self.pk_col = self.table.c[pk_columns[0]]
+
+                # Создаем запрос только с существующими столбцами
+                columns_to_select = [getattr(self.table.c, col_name) for col_name in actual_column_names
+                                     if hasattr(self.table.c, col_name)]
+
+                self._rows = []  # Очищаем текущие данные
+
+                if columns_to_select:
+                    res = conn.execute(select(*columns_to_select).order_by(self.pk_col.asc()))
+                    for r in res:
+                        # Безопасно создаем словарь из mapping
+                        row_dict = {}
+                        for key, value in r._mapping.items():
+                            row_dict[key] = value
+                        self._rows.append(row_dict)
+                else:
+                    self._rows = []
+        except SQLAlchemyError as e:
+            print(f"Ошибка при обновлении данных: {e}")
+            self._rows = []
         finally:
             self.endResetModel()
 

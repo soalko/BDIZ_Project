@@ -37,6 +37,10 @@ QPushButton {
                               stop: 1 rgba(137, 180, 250, 0.28));
     border: 2px solid rgba(1, 1, 30, 0.35);
     color: #dbe6ff;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 12px;
+    margin: 3px;
 }
 
 QPushButton:hover {
