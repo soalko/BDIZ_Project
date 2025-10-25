@@ -137,7 +137,6 @@ class SetupTab(QWidget):
         if drop_and_create_schema_sa(main.engine, main.md):
             self.log.append("Схема БД создана: aircraft, flights, passengers, crew, crew_member.")
             main.refresh_all_models()
-            main.refresh_combos()
         else:
             QMessageBox.critical(self, "Схема", "Ошибка при создании схема. См. консоль/лог.")
 
@@ -149,6 +148,5 @@ class SetupTab(QWidget):
         if insert_demo_data_sa(main.engine, main.tables):
             self.log.append("Добавлены демонстрационные данные (INSERT).")
             main.refresh_all_models()
-            main.refresh_combos()
         else:
             QMessageBox.warning(self, "Демо", "Часть данных не добавлена. См. консоль.")

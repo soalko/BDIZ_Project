@@ -121,12 +121,11 @@ class AircraftTab(BaseTab):
 
         try:
             with self.engine.begin() as conn:
-                conn.execute(insert(self.md).values(
+                conn.execute(insert(self.tables[self.table]).values(
                     model=model, year=year, seats_amount=seats, baggage_capacity=baggage
                 ))
             self.model.refresh()
             self.clear_form()
-            self.window().refresh_combos()
         except IntegrityError as e:
             QMessageBox.critical(self, "Ошибка INSERT (CHECK constraint)", str(e.orig))
         except SQLAlchemyError as e:
@@ -135,7 +134,6 @@ class AircraftTab(BaseTab):
     def delete_selected(self):
         if self.current_mode != AppMode.ADD:
             return
-
         idx = self.add_table.currentIndex()
         if not idx.isValid():
             QMessageBox.information(self, "Удаление", "Выберите самолет")

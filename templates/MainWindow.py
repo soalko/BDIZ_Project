@@ -183,16 +183,6 @@ class MainWindow(QMainWindow):
             if tab and hasattr(tab, 'set_mode'):
                 tab.set_mode(self.current_mode)
 
-    def refresh_combos(self):
-        tabs = [
-            self.aircraft_tab, self.flights_tab, self.passengers_tab,
-            self.tickets_tab, self.crew_tab, self.crew_members_tab
-        ]
-
-        for tab in tabs:
-            if tab and hasattr(tab, 'refresh_aircraft_combo'):
-                tab.refresh_aircraft_combo()
-
     def disconnect_db(self):
         tabs_to_remove = [
             self.aircraft_tab, self.flights_tab, self.passengers_tab,

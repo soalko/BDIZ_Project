@@ -319,8 +319,8 @@ class BaseTab(QWidget):
             QMessageBox.information(self, "Успех",
                                     f"Столбец '{name}' добавлен\n"
                                     )
+            self.model.refresh()
             self.load_table_structure()
-            self.update_model()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить столбец: {str(e)}")
 
@@ -348,15 +348,12 @@ class BaseTab(QWidget):
 
         try:
             self.execute_sql(sql)
+            self.model.refresh()
 
             msg_box.exec()
 
             if msg_box.clickedButton() == yes_button:
                 QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' удален")
-            self.update_model()
-            self.model.refresh()
-            self.add_table.setModel(self.model)
-            self.window().refresh_combos()
         except Exception as e:
             QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' не удален. Ошибка\n {e}")
 
@@ -378,6 +375,7 @@ class BaseTab(QWidget):
             sql += ', '.join(sql_parts)
 
             self.execute_sql(sql)
+            self.model.refresh()
 
             QMessageBox.information(self, "Успех",
                                     f"Столбец '{name}' изменен\n"
