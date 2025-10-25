@@ -263,5 +263,6 @@ QMessageBox QLabel {
 }
 
 QMessageBox QPushButton {
+    min-width: 80px;
     color: #000000
 }
