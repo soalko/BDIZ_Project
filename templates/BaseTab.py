@@ -172,6 +172,28 @@ class BaseTab(QWidget):
 
         return ", ".join(constraints) if constraints else "нет"
 
+    def refresh_table_structure(self):
+        """Обновляет метаданные таблицы и перезагружает структуру"""
+        try:
+            from sqlalchemy import Table, MetaData
+
+            metadata = MetaData()
+            refreshed_table = Table(
+                self.table,
+                metadata,
+                autoload_with=self.engine
+            )
+
+            self.tables[self.table] = refreshed_table
+
+            self.load_table_structure()
+
+            if hasattr(self, 'model') and self.model:
+                self.model.refresh()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка обновления", f"Не удалось обновить структуру таблицы: {str(e)}")
+
     def on_structure_column_selected(self, index):
         if index.isValid():
             self.delete_column_btn.setEnabled(True)
@@ -319,8 +341,7 @@ class BaseTab(QWidget):
             QMessageBox.information(self, "Успех",
                                     f"Столбец '{name}' добавлен\n"
                                     )
-            self.model.refresh()
-            self.load_table_structure()
+            self.refresh_table_structure()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить столбец: {str(e)}")
 
@@ -348,12 +369,12 @@ class BaseTab(QWidget):
 
         try:
             self.execute_sql(sql)
-            self.model.refresh()
 
             msg_box.exec()
 
             if msg_box.clickedButton() == yes_button:
                 QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' удален")
+                self.refresh_table_structure()
         except Exception as e:
             QMessageBox.information(self, "Удаление", f"Столбец '{column_name}' не удален. Ошибка\n {e}")
 
@@ -375,13 +396,12 @@ class BaseTab(QWidget):
             sql += ', '.join(sql_parts)
 
             self.execute_sql(sql)
-            self.model.refresh()
 
             QMessageBox.information(self, "Успех",
                                     f"Столбец '{name}' изменен\n"
                                     )
-            self.load_table_structure()
-            self.update_model()
+
+            self.refresh_table_structure()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось изменить столбец: {str(e)}")
 
