@@ -79,6 +79,7 @@ class TicketsTab(BaseTab):
         self.seat_number_edit.setMaxLength(4)
         self.has_baggage_checkbox = QCheckBox("Есть багаж")
         self.has_baggage_checkbox.setChecked(False)
+        self.seat_number_edit.setMaxLength(3)
 
         self.add_form_layout.addRow("Рейс:", self.flight_combo)
         self.add_form_layout.addRow("Пассажир:", self.passenger_combo)
