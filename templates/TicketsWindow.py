@@ -1,7 +1,7 @@
 # ===== PySide6 =====
 from PySide6.QtCore import QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import (
-    QLineEdit, QPushButton, QMessageBox,
+    QLineEdit, QMessageBox,
     QComboBox, QCheckBox, QTableView, QHeaderView
 )
 from styles.styles import apply_compact_table_view
