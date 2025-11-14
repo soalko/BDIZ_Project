@@ -16,7 +16,8 @@ QGroupBox {
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top center;
-    padding: 0 12px;
+    padding: 2px 6px;
+    border-radius: 3px;
 }
 /* ===== кнопки ===== */
 QPushButton {
@@ -196,7 +197,7 @@ QFormLayout {
 QTextEdit {
     border-radius: 8px;
     font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
+    font-size: 15px;
     padding: 10px;
 }
 QMessageBox QLabel {
