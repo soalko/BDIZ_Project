@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 )
 from styles.styles import apply_compact_table_view
 
-
 # ===== SQLAlchemy =====
 from sqlalchemy import (
     insert, delete
@@ -14,12 +13,10 @@ from sqlalchemy import (
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-
 # ===== Files =====
 from db.models import SATableModel
 from templates.BaseTab import BaseTab
 from templates.modes import AppMode
-
 
 
 # -------------------------------
@@ -29,7 +26,10 @@ class CrewMembersTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
         super().__init__(engine, tables, parent)
 
+        self.table = "crew_member"
+
         self.model = SATableModel(engine, self.tables["crew_member"], self)
+        self.update_model()
 
         self.add_record_btn.clicked.connect(self.add_crew_member)
         self.clear_form_btn.clicked.connect(self.clear_form)
@@ -41,6 +41,14 @@ class CrewMembersTab(BaseTab):
         self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.add_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.read_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSortingEnabled(True)
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
@@ -63,47 +71,12 @@ class CrewMembersTab(BaseTab):
 
         self.update_ui_for_mode()
 
-    def load_table_structure(self):
-        """Загружает структуру таблицы - столбцы как строки"""
-        try:
-            from PySide6.QtGui import QStandardItemModel, QStandardItem
-
-            # Создаем модель для отображения структуры
-            structure_model = QStandardItemModel()
-            structure_model.setHorizontalHeaderLabels(["Название столбца", "Тип данных", "Ограничения"])
-
-            # Получаем информацию о столбцах таблицы
-            table = self.tables["crew"]
-            for i, column in enumerate(table.columns):
-                # Добавляем строку с информацией о столбце
-                row_items = [
-                    QStandardItem(column.name),  # Название столбца
-                    QStandardItem(str(column.type)),  # Тип данных
-                    QStandardItem(self._get_column_constraints(column))  # Ограничения
-                ]
-
-                # Сохраняем имя столбца в данных для последующего использования
-                for item in row_items:
-                    item.setData(column.name, Qt.UserRole)
-
-                structure_model.appendRow(row_items)
-
-            self.structure_table.setModel(structure_model)
-            self.structure_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-            apply_compact_table_view(self.structure_table)
-
-            self.delete_column_btn.setEnabled(False)
-            self.edit_column_btn.setEnabled(False)
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка загрузки структуры", str(e))
-
     def add_form_rows(self):
         self.crew_combo = QComboBox()
         self.job_position_edit = QLineEdit()
         self.job_position_edit.setMaxLength(50)
         self.add_form_layout.addRow("Экипаж:", self.crew_combo)
         self.add_form_layout.addRow("Должность:", self.job_position_edit)
-
 
     def update_ui_for_mode(self):
         super().update_ui_for_mode()

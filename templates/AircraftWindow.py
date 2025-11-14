@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 # ===== SQLAlchemy =====
-from sqlalchemy import insert, delete
+from sqlalchemy import insert, delete, inspect
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 # ===== Files =====
@@ -44,8 +44,9 @@ except ImportError:
 class AircraftTab(BaseTab):
     def __init__(self, engine, tables, parent=None):
         super().__init__(engine, tables, parent)
-
+        self.table = "aircraft"
         self.model = SATableModel(engine, self.tables["aircraft"], self)
+        self.update_model()
 
         self.add_record_btn.clicked.connect(self.add_aircraft)
         self.clear_form_btn.clicked.connect(self.clear_form)
@@ -57,6 +58,14 @@ class AircraftTab(BaseTab):
         self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         apply_compact_table_view(self.add_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.read_table)
+
+        self.read_table.setModel(self.model)
+        self.read_table.setSortingEnabled(True)
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.model)
@@ -75,40 +84,7 @@ class AircraftTab(BaseTab):
 
         self.on_header_clicked = on_header_clicked.__get__(self)
 
-
         self.update_ui_for_mode()
-
-    def load_table_structure(self):
-        try:
-            from PySide6.QtGui import QStandardItemModel, QStandardItem
-
-            # Создаем модель для отображения структуры
-            structure_model = QStandardItemModel()
-            structure_model.setHorizontalHeaderLabels(["Название столбца", "Тип данных", "Ограничения"])
-
-            table = self.tables["aircraft"]
-
-            for i, column in enumerate(table.columns):
-                row_items = [
-                    QStandardItem(column.name),
-                    QStandardItem(str(column.type)),
-                    QStandardItem(self._get_column_constraints(column))
-                ]
-
-                # Сохраняем имя столбца в данных для последующего использования
-                for item in row_items:
-                    item.setData(column.name, Qt.UserRole)
-
-                structure_model.appendRow(row_items)
-
-            self.structure_table.setModel(structure_model)
-            self.structure_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-            apply_compact_table_view(self.structure_table)
-
-            self.delete_column_btn.setEnabled(False)
-            self.edit_column_btn.setEnabled(False)
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка загрузки структуры", str(e))
 
     def add_form_rows(self):
         self.model_edit = QLineEdit()
@@ -148,12 +124,11 @@ class AircraftTab(BaseTab):
 
         try:
             with self.engine.begin() as conn:
-                conn.execute(insert(self.tables["aircraft"]).values(
+                conn.execute(insert(self.tables[self.table]).values(
                     model=model, year=year, seats_amount=seats, baggage_capacity=baggage
                 ))
             self.model.refresh()
             self.clear_form()
-            self.window().refresh_combos()
         except IntegrityError as e:
             QMessageBox.critical(self, "Ошибка INSERT (CHECK constraint)", str(e.orig))
         except SQLAlchemyError as e:
@@ -162,7 +137,6 @@ class AircraftTab(BaseTab):
     def delete_selected(self):
         if self.current_mode != AppMode.ADD:
             return
-
         idx = self.add_table.currentIndex()
         if not idx.isValid():
             QMessageBox.information(self, "Удаление", "Выберите самолет")

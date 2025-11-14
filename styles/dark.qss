@@ -34,9 +34,14 @@ QGroupBox::title {
 /* ===== КНОПКИ ===== */
 QPushButton {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #46464B, stop: 1 #747481);
-    border: 2px solid #000000;
-    color: #FFFFFF;
+                              stop: 0 rgba(174, 207, 255, 0.35),
+                              stop: 1 rgba(137, 180, 250, 0.28));
+    border: 2px solid rgba(1, 1, 30, 0.35);
+    color: #dbe6ff;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 12px;
+    margin: 3px;
 }
 
 QPushButton:hover {
