@@ -144,22 +144,8 @@ class BaseTab(QWidget):
     def open_custom_types_dialog(self):
         """Открывает диалог управления пользовательскими типами"""
         dialog = CustomTypesDialog(self.engine, self)
-        dialog.exec()
-
-    def open_case_expression_dialog(self):
-        """Открывает конструктор CASE выражений"""
-        columns = self.get_table_columns(self.table)
-        dialog = CaseExpressionDialog(self, columns)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            case_expr = dialog.get_case_expression()
-            if case_expr:
-                # Добавляем CASE выражение в список SELECT
-                current_text = self.added_functions_list.toPlainText()
-                if current_text:
-                    current_text += ",\n" + case_expr
-                else:
-                    current_text = case_expr
-                self.added_functions_list.setPlainText(current_text)
+            dialog.close()
 
     def load_table_structure(self):
         try:
@@ -245,6 +231,13 @@ class BaseTab(QWidget):
 
         layout.addWidget(QLabel("Тип данных:"))
         type_combo = QComboBox()
+        sql = """
+                SELECT typname, typtype 
+                FROM pg_type
+                """
+        types = self.execute_sql(sql)
+        types = [i[0] for i in types if i[1] == 'b']
+        type_combo.addItems(types)
         type_combo.addItems([
             "integer", "char", "varchar", "text", "real",
             "decimal", "boolean", "date", "time", "timestamp", "interval"
@@ -324,10 +317,13 @@ class BaseTab(QWidget):
         # Выбор типа данных
         layout.addWidget(QLabel("Тип данных:"))
         type_combo = QComboBox()
-        type_combo.addItems([
-            "integer", "char", "varchar", "text", "real",
-            "decimal", "boolean", "date", "time", "timestamp", "interval"
-        ])
+        sql = """
+                SELECT typname, typtype 
+                FROM pg_type
+                """
+        types = self.execute_sql(sql)
+        types = [i[0] for i in types if i[1] == 'b']
+        type_combo.addItems(types)
         layout.addWidget(type_combo)
 
         check_not_null = QCheckBox("NOT NULL")
@@ -1817,130 +1813,3 @@ class CustomTypesDialog(QDialog):
                 self.load_types()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось удалить тип: {str(e)}")
-
-
-class CaseExpressionDialog(QDialog):
-    def __init__(self, parent=None, table_columns=None):
-        super().__init__(parent)
-        self.table_columns = table_columns or []
-        self.setWindowTitle("Конструктор CASE выражения")
-        self.setup_ui()
-
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
-
-        layout.addWidget(QLabel("Псевдоним для результата:"))
-        self.alias_edit = QLineEdit()
-        self.alias_edit.setPlaceholderText("result_column")
-        layout.addWidget(self.alias_edit)
-
-        # Условия WHEN
-        self.conditions_widget = QWidget()
-        conditions_layout = QVBoxLayout(self.conditions_widget)
-        conditions_layout.addWidget(QLabel("Условия WHEN-THEN:"))
-
-        self.conditions_scroll = QScrollArea()
-        self.conditions_content = QWidget()
-        self.conditions_layout = QVBoxLayout(self.conditions_content)
-        self.conditions_scroll.setWidget(self.conditions_content)
-        self.conditions_scroll.setWidgetResizable(True)
-        self.conditions_scroll.setMaximumHeight(200)
-        conditions_layout.addWidget(self.conditions_scroll)
-
-        self.add_condition_button = QPushButton("Добавить условие")
-        self.add_condition_button.clicked.connect(self.add_condition)
-        conditions_layout.addWidget(self.add_condition_button)
-
-        layout.addWidget(self.conditions_widget)
-
-        # ELSE
-        else_group = QGroupBox("ELSE (необязательно)")
-        else_layout = QVBoxLayout(else_group)
-        self.else_edit = QLineEdit()
-        self.else_edit.setPlaceholderText("Значение по умолчанию")
-        else_layout.addWidget(self.else_edit)
-        layout.addWidget(else_group)
-
-        # Предпросмотр
-        preview_group = QGroupBox("Предпросмотр")
-        preview_layout = QVBoxLayout(preview_group)
-        self.preview_edit = QTextEdit()
-        self.preview_edit.setMaximumHeight(100)
-        self.preview_edit.setReadOnly(True)
-        preview_layout.addWidget(self.preview_edit)
-        layout.addWidget(preview_group)
-
-        self.add_condition()  # Добавить первое условие
-
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-        # Обновление предпросмотра при изменениях
-        self.alias_edit.textChanged.connect(self.update_preview)
-        self.else_edit.textChanged.connect(self.update_preview)
-
-    def add_condition(self):
-        condition_widget = QWidget()
-        condition_layout = QHBoxLayout(condition_widget)
-
-        when_edit = QLineEdit()
-        when_edit.setPlaceholderText("WHEN условие")
-        when_edit.textChanged.connect(self.update_preview)
-
-        then_edit = QLineEdit()
-        then_edit.setPlaceholderText("THEN значение")
-        then_edit.textChanged.connect(self.update_preview)
-
-        remove_btn = QPushButton("×")
-        remove_btn.setFixedSize(30, 30)
-        remove_btn.clicked.connect(lambda: self.remove_condition(condition_widget))
-
-        condition_layout.addWidget(QLabel("WHEN"))
-        condition_layout.addWidget(when_edit)
-        condition_layout.addWidget(QLabel("THEN"))
-        condition_layout.addWidget(then_edit)
-        condition_layout.addWidget(remove_btn)
-
-        # Сохраняем ссылки на редактируемые поля
-        condition_widget.when_edit = when_edit
-        condition_widget.then_edit = then_edit
-
-        self.conditions_layout.addWidget(condition_widget)
-
-    def remove_condition(self, widget):
-        self.conditions_layout.removeWidget(widget)
-        widget.deleteLater()
-        self.update_preview()
-
-    def update_preview(self):
-        conditions = []
-        for i in range(self.conditions_layout.count()):
-            widget = self.conditions_layout.itemAt(i).widget()
-            if widget and hasattr(widget, 'when_edit') and hasattr(widget, 'then_edit'):
-                when = widget.when_edit.text().strip()
-                then = widget.then_edit.text().strip()
-                if when and then:
-                    conditions.append(f"WHEN {when} THEN {then}")
-
-        if not conditions:
-            self.preview_edit.setPlainText("")
-            return
-
-        case_expr = "CASE\n  " + "\n  ".join(conditions)
-
-        else_text = self.else_edit.text().strip()
-        if else_text:
-            case_expr += f"\n  ELSE {else_text}"
-
-        case_expr += "\nEND"
-
-        alias = self.alias_edit.text().strip()
-        if alias:
-            case_expr += f" AS {alias}"
-
-        self.preview_edit.setPlainText(case_expr)
-
-    def get_case_expression(self):
-        return self.preview_edit.toPlainText()
