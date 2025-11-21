@@ -34,14 +34,9 @@ QGroupBox::title {
 /* ===== КНОПКИ ===== */
 QPushButton {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 rgba(174, 207, 255, 0.35),
-                              stop: 1 rgba(137, 180, 250, 0.28));
-    border: 2px solid rgba(1, 1, 30, 0.35);
-    color: #dbe6ff;
-    padding: 10px 20px;
-    font-weight: 600;
-    font-size: 12px;
-    margin: 3px;
+                              stop: 0 #46464B, stop: 1 #747481);
+    border: 2px solid #000000;
+    color: #FFFFFF;
 }
 
 QPushButton:hover {
@@ -107,8 +102,8 @@ QSpinBox::up-button, QSpinBox::down-button,
 QDateEdit::up-button, QDateEdit::down-button,
 QTimeEdit::up-button, QTimeEdit::down-button {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #313244, stop: 1 #1e1e2e);
-    border: 1px solid #01011E;
+                              stop: 0 #414148, stop: 1 #84848F);
+    border: 1px solid #000000;
 }
 
 QSpinBox::up-button:hover, QSpinBox::down-button:hover,
@@ -120,7 +115,7 @@ QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
 /* ===== ЧЕКБОКСЫ ===== */
 QCheckBox {
     background: transparent;
-    color: #bac2de;
+    color: #FFFFFF;
 }
 
 QCheckBox::indicator {
@@ -172,7 +167,7 @@ QHeaderView::section {
 
 QTableCornerButton::section {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                              stop: 0 #000000, stop: 1 #000000);
+                              stop: 0 #000000, stop: 1 #5A5A64);
     border: 1px solid #2E2F39;
 }
 
@@ -181,7 +176,7 @@ QTableView::item {
 }
 
 QTableView::item:hover {
-    background-color: rgba(171, 178, 186, 0.18); /* мягкий зелёный для дарк-темы */
+    background-color: rgba(171, 178, 186, 0.18);
 }
 
 QTableView::item:selected {
@@ -230,7 +225,7 @@ QScrollBar::handle:vertical {
 }
 
 QScrollBar::handle:vertical:hover {
-    background-color: #89b4fa;
+    background-color: #6B6F77;
 }
 
 QScrollBar:horizontal {
@@ -243,7 +238,7 @@ QScrollBar::handle:horizontal {
 }
 
 QScrollBar::handle:horizontal:hover {
-    background-color: #89b4fa;
+    background-color: #6B6F77;
 }
 
 /* ===== ЛОГ И СООБЩЕНИЯ ===== */
