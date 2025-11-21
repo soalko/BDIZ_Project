@@ -62,6 +62,7 @@ def connect_styles(app: QApplication) -> None:
     _apply_qss(app, _current_theme)
 
 
+
 def switch_theme(theme: str) -> None:
     """
     Переключить тему на 'light' или 'dark'.

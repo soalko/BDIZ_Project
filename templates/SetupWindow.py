@@ -2,10 +2,11 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QFormLayout, QLabel, QLineEdit, QPushButton, QMessageBox,
-    QComboBox, QTextEdit, QGroupBox
+    QComboBox, QTextEdit, QGroupBox, QSpacerItem, QSizePolicy
 )
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont  # Добавляем импорт QFont
 
 # ===== SQLAlchemy =====
 from sqlalchemy.exc import SQLAlchemyError
@@ -39,7 +40,7 @@ class SetupTab(QWidget):
         self.port_edit = QLineEdit("5432")
         self.db_edit = QLineEdit("airport")
         self.user_edit = QLineEdit("postgres")
-        self.pw_edit = QLineEdit("Asdqer9876543_")
+        self.pw_edit = QLineEdit("12345")
         self.pw_edit.setEchoMode(QLineEdit.Password)
         self.ssl_edit = QLineEdit("prefer")
 
@@ -51,9 +52,23 @@ class SetupTab(QWidget):
         self.disconnect_btn.clicked.connect(self.do_disconnect)
         self.disconnect_btn.setEnabled(False)
 
-        conn_buttons = QHBoxLayout()
-        conn_buttons.addWidget(self.connect_btn)
-        conn_buttons.addWidget(self.disconnect_btn)
+        # Кнопки управления БД
+        self.create_btn = QPushButton("Сбросить и создать БД (CREATE)")
+        self.create_btn.setEnabled(False)
+        self.create_btn.clicked.connect(self.reset_db)
+
+        self.demo_btn = QPushButton("Добавить демо-данные (INSERT)")
+        self.demo_btn.setEnabled(False)
+        self.demo_btn.clicked.connect(self.add_demo)
+
+        # Основной layout
+        main_layout = QVBoxLayout(self)
+
+        # Верхняя часть - форма подключения и кнопки
+        top_layout = QHBoxLayout()
+
+        # Левая часть - только форма подключения
+        left_layout = QVBoxLayout()
 
         conn_form = QFormLayout()
         conn_form.addRow("Driver:", self.driver_cb)
@@ -66,22 +81,41 @@ class SetupTab(QWidget):
 
         conn_box = QGroupBox("Параметры подключения (SQLAlchemy)")
         conn_box.setLayout(conn_form)
+        conn_box.setMaximumWidth(600)
 
-        self.create_btn = QPushButton("Сбросить и создать БД (CREATE)")
-        self.create_btn.setEnabled(False)
-        self.create_btn.clicked.connect(self.reset_db)
+        left_layout.addWidget(conn_box)
+        left_layout.addStretch()
 
-        self.demo_btn = QPushButton("Добавить демо-данные (INSERT)")
-        self.demo_btn.setEnabled(False)
-        self.demo_btn.clicked.connect(self.add_demo)
+        # Центральная часть - кнопки в GroupBox с рамкой
+        center_layout = QVBoxLayout()
 
-        layout = QVBoxLayout(self)
-        layout.addWidget(conn_box, 0)
-        layout.addLayout(conn_buttons)
-        layout.addWidget(self.create_btn)
-        layout.addWidget(self.demo_btn)
-        layout.addWidget(QLabel("Лог:"))
-        layout.addWidget(self.log)
+        # Добавляем растягивающийся спейсер сверху
+        center_layout.addStretch()
+
+        # Создаем GroupBox для кнопок с рамкой без названия
+        buttons_box = QGroupBox()
+        buttons_box.setMaximumWidth(300)  # Ограничиваем ширину GroupBox
+        buttons_layout = QVBoxLayout(buttons_box)
+
+        # Добавляем кнопки в GroupBox
+        buttons_layout.addWidget(self.connect_btn)
+        buttons_layout.addWidget(self.disconnect_btn)
+        buttons_layout.addWidget(self.create_btn)
+        buttons_layout.addWidget(self.demo_btn)
+        buttons_layout.addStretch()  # Растягивающееся пространство между кнопками
+
+        # Добавляем GroupBox с кнопками в центральный layout
+        center_layout.addWidget(buttons_box)
+        center_layout.addStretch()  # Добавляем растягивающийся спейсер снизу
+
+        # Объединяем все части
+        top_layout.addLayout(left_layout)
+        top_layout.addLayout(center_layout)
+
+        # Основной layout
+        main_layout.addLayout(top_layout)
+        main_layout.addWidget(QLabel("Лог:"))
+        main_layout.addWidget(self.log)
 
     def current_cfg(self) -> PgConfig:
         try:

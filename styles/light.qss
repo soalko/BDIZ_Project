@@ -24,8 +24,9 @@ QGroupBox {
 }
 
 QGroupBox::title {
-    background-color: #b8daff ;
+    background-color: #FFFFFF;
     color: #000000;
+    border: 1px solid #89b4fa;
 }
 
 
@@ -241,6 +242,8 @@ QTextEdit {
                               stop: 1 #b8daff, stop: 0 #b8daff);
     border: 2px solid #8A9CF6;
     color: #000000;
+    selection-background-color: #6BB4E4;
+    selection-color: #000000;
 }
 
 QTextEdit:focus {
