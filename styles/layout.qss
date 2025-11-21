@@ -25,7 +25,6 @@ QPushButton {
     font-weight: 600;
     font-size: 12px;
     margin: 3px;
-    min-weight: 100px;
 }
 QPushButton:pressed {
     padding: 11px 19px 9px 21px;
