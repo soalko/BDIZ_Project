@@ -13,13 +13,13 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 
 # ===== Files =====
-from templates.AircraftWindow import AircraftTab
-from templates.CrewMemberWindow import CrewMembersTab
-from templates.CrewWindow import CrewTab
-from templates.FlightsWindow import FlightsTab
-from templates.PassangersWindow import PassengersTab
+from templates.windows.AircraftWindow import AircraftTab
+from templates.windows.CrewMemberWindow import CrewMembersTab
+from templates.windows.CrewWindow import CrewTab
+from templates.windows.FlightsWindow import FlightsTab
+from templates.windows.PassangersWindow import PassengersTab
 from templates.SetupWindow import SetupTab
-from templates.TicketsWindow import TicketsTab
+from templates.windows.TicketsWindow import TicketsTab
 from templates.modes import AppMode
 from styles import switch_theme, get_current_theme
 
