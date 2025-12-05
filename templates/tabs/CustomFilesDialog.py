@@ -1,10 +1,9 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QCheckBox,
-    QPushButton, QFormLayout, QTableView,
-    QComboBox, QLineEdit, QDialog,
-    QLabel, QTabWidget, QTextEdit,
+    QWidget, QVBoxLayout, QPushButton,
+    QTableView, QComboBox, QLineEdit,
+    QDialog, QLabel, QTextEdit,
     QGroupBox, QHBoxLayout, QDialogButtonBox,
-    QMessageBox, QScrollArea
+    QMessageBox
 )
 
 from sqlalchemy import text

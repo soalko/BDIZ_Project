@@ -1,10 +1,8 @@
 # ===== PySide6 =====
-from PySide6.QtCore import QSortFilterProxyModel, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QLineEdit, QMessageBox,
-    QComboBox, QTableView, QHeaderView
+    QMessageBox
 )
-from styles.styles import apply_compact_table_view
 
 # ===== SQLAlchemy =====
 from sqlalchemy import (
@@ -18,7 +16,6 @@ from db.models import SATableModel
 from templates.tabs.AddWindow import AddWindow
 from templates.tabs.BaseTab import BaseTab
 from templates.tabs.EditWindow import EditWindow
-from templates.tabs.ReadWindow import ReadWindow
 
 # -------------------------------
 # Вкладка «Члены Экипажа»
@@ -34,22 +31,6 @@ class CrewMembersTab(BaseTab):
         return CrewMembersAddWindow(self.engine, self.tables, self.table, self)
 
 
-class CrewMembersReadWindow(ReadWindow):
-    def __init__(self, engine, tables, table, parent=None):
-        super().__init__(engine, tables, table, parent)
-        self.setup_crew_members_ui()
-
-    def setup_crew_members_ui(self):
-        from db.models import SATableModel
-        self.model = SATableModel(self.engine, self.tables[self.table], self)
-
-        self.read_table.setModel(self.model)
-        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
-        apply_compact_table_view(self.read_table)
-        self.read_table.setSortingEnabled(True)
-
-
 class CrewMembersEditWindow(EditWindow):
     def __init__(self, engine, tables, table, parent=None):
         super().__init__(engine, tables, table, parent)
@@ -59,27 +40,6 @@ class CrewMembersEditWindow(EditWindow):
 class CrewMembersAddWindow(AddWindow):
     def __init__(self, engine, tables, table, parent=None):
         super().__init__(engine, tables, table, parent)
-        self.model = SATableModel(self.engine, self.tables[self.table], self)
-        self.setup_crew_members_ui()
-
-    def setup_crew_members_ui(self):
-        from db.models import SATableModel
-        self.model = SATableModel(self.engine, self.tables[self.table], self)
-
-        self.proxy_model = QSortFilterProxyModel()
-        self.proxy_model.setSourceModel(self.model)
-        self.add_table.setModel(self.proxy_model)
-        self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-        self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
-        apply_compact_table_view(self.add_table)
-        self.add_table.setSortingEnabled(True)
-
-        header = self.add_table.horizontalHeader()
-        header.setSectionsClickable(True)
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
-
-        header.sectionClicked.connect(self.on_header_clicked)
 
     def on_header_clicked(self, logical_index):
         current_order = self.proxy_model.sortOrder()
