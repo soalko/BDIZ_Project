@@ -4,7 +4,8 @@ from PySide6.QtWidgets import (
     QComboBox, QLineEdit, QDialog,
     QLabel, QTabWidget, QTextEdit,
     QGroupBox, QHBoxLayout, QDialogButtonBox,
-    QMessageBox, QScrollArea
+    QMessageBox, QScrollArea, QListWidget,
+    QListWidgetItem, QRadioButton, QButtonGroup
 )
 
 from PySide6.QtCore import (Qt)
@@ -51,6 +52,10 @@ class SQLFilterDialog(QDialog):
         case_tab = self.create_case_tab()
         self.tabs_widget.addTab(case_tab, "CASE EXPRESSIONS")
 
+        # НОВАЯ ВКЛАДКА: Расширенная группировка
+        advanced_grouping_tab = self.create_advanced_grouping_tab()
+        self.tabs_widget.addTab(advanced_grouping_tab, "РАСШИРЕННАЯ ГРУППИРОВКА")
+
         main_layout.addWidget(self.tabs_widget)
 
         buttons_row = QHBoxLayout()
@@ -70,6 +75,189 @@ class SQLFilterDialog(QDialog):
 
         scroll_area.setWidget(main_widget)
         layout.addWidget(scroll_area)
+
+    def create_advanced_grouping_tab(self):
+        """Создает вкладку для расширенной группировки данных (ROLLUP, CUBE, GROUPING SETS)"""
+        tab = QWidget()
+        vbox = QVBoxLayout(tab)
+
+        # Тип группировки
+        grouping_type_group = QGroupBox("Тип расширенной группировки")
+        grouping_type_layout = QVBoxLayout(grouping_type_group)
+
+        # Радиокнопки для выбора типа группировки
+        self.grouping_type_radio_simple = QRadioButton("Обычная группировка (GROUP BY)")
+        self.grouping_type_radio_rollup = QRadioButton("ROLLUP (иерархическая с итогами)")
+        self.grouping_type_radio_cube = QRadioButton("CUBE (все комбинации)")
+        self.grouping_type_radio_sets = QRadioButton("GROUPING SETS (пользовательские наборы)")
+
+        self.grouping_type_radio_simple.setChecked(True)
+
+        grouping_type_layout.addWidget(self.grouping_type_radio_simple)
+        grouping_type_layout.addWidget(self.grouping_type_radio_rollup)
+        grouping_type_layout.addWidget(self.grouping_type_radio_cube)
+        grouping_type_layout.addWidget(self.grouping_type_radio_sets)
+
+        vbox.addWidget(grouping_type_group)
+
+        # Колонки для группировки
+        columns_group = QGroupBox("Колонки для группировки")
+        columns_layout = QVBoxLayout(columns_group)
+
+        self.grouping_columns_list = QListWidget()
+        self.grouping_columns_list.setSelectionMode(QListWidget.MultiSelection)
+
+        # Заполняем список колонками текущей таблицы
+        parent = self.parent()
+        if parent and hasattr(parent, 'get_table_columns'):
+            columns = parent.get_table_columns(self.current_table)
+            for column in columns:
+                item = QListWidgetItem(column)
+                self.grouping_columns_list.addItem(item)
+        else:
+            sample_columns = ["aircraft_id", "model", "year", "seats_amount", "baggage_capacity"]
+            for column in sample_columns:
+                item = QListWidgetItem(column)
+                self.grouping_columns_list.addItem(item)
+
+        columns_layout.addWidget(self.grouping_columns_list)
+
+        # Кнопки для управления выбором колонок
+        columns_buttons = QHBoxLayout()
+        self.select_all_columns_btn = QPushButton("Выбрать все")
+        self.select_all_columns_btn.clicked.connect(self.select_all_grouping_columns)
+        self.deselect_all_columns_btn = QPushButton("Снять все")
+        self.deselect_all_columns_btn.clicked.connect(self.deselect_all_grouping_columns)
+
+        columns_buttons.addWidget(self.select_all_columns_btn)
+        columns_buttons.addWidget(self.deselect_all_columns_btn)
+        columns_buttons.addStretch()
+
+        columns_layout.addLayout(columns_buttons)
+        vbox.addWidget(columns_group)
+
+        # GROUPING SETS (только для соответствующего типа)
+        self.grouping_sets_group = QGroupBox("Наборы GROUPING SETS (через точку с запятой)")
+        grouping_sets_layout = QVBoxLayout(self.grouping_sets_group)
+
+        self.grouping_sets_text = QTextEdit()
+        self.grouping_sets_text.setMaximumHeight(100)
+        self.grouping_sets_text.setPlaceholderText(
+            "Каждая строка - отдельный набор колонок.\n"
+            "Пример:\n"
+            "aircraft_id, model\n"
+            "aircraft_id\n"
+            "model, year"
+        )
+        grouping_sets_layout.addWidget(self.grouping_sets_text)
+
+        vbox.addWidget(self.grouping_sets_group)
+        self.grouping_sets_group.setVisible(False)  # Скрываем по умолчанию
+
+        # Уровни детализации (для ROLLUP)
+        self.grouping_levels_group = QGroupBox("Уровни детализации (для ROLLUP)")
+        grouping_levels_layout = QVBoxLayout(self.grouping_levels_group)
+
+        self.grouping_levels_combo = QComboBox()
+        self.grouping_levels_combo.addItems(["Все уровни", "Только итоги", "По уровням"])
+        grouping_levels_layout.addWidget(self.grouping_levels_combo)
+
+        vbox.addWidget(self.grouping_levels_group)
+        self.grouping_levels_group.setVisible(False)  # Скрываем по умолчанию
+
+        # Агрегатные функции
+        aggregations_group = QGroupBox("Агрегатные функции")
+        aggregations_layout = QVBoxLayout(aggregations_group)
+
+        self.aggregation_functions_list = QListWidget()
+        self.aggregation_functions_list.setSelectionMode(QListWidget.MultiSelection)
+        self.aggregation_functions_list.addItems([
+            "COUNT(*) as total_count",
+            "SUM(seats_amount) as total_seats",
+            "AVG(year) as avg_year",
+            "MIN(year) as min_year",
+            "MAX(year) as max_year"
+        ])
+        aggregations_layout.addWidget(self.aggregation_functions_list)
+
+        # Пользовательская агрегатная функция
+        custom_agg_layout = QHBoxLayout()
+        self.custom_agg_combo = QComboBox()
+        self.custom_agg_combo.addItems(["COUNT", "SUM", "AVG", "MIN", "MAX"])
+        self.custom_agg_column_combo = QComboBox()
+
+        if parent and hasattr(parent, 'get_table_columns'):
+            agg_columns = parent.get_table_columns(self.current_table)
+            self.custom_agg_column_combo.addItems(agg_columns)
+        else:
+            self.custom_agg_column_combo.addItems(["seats_amount", "year", "baggage_capacity"])
+
+        self.custom_agg_alias = QLineEdit()
+        self.custom_agg_alias.setPlaceholderText("alias")
+
+        self.add_custom_agg_btn = QPushButton("Добавить")
+        self.add_custom_agg_btn.clicked.connect(self.add_custom_aggregation)
+
+        custom_agg_layout.addWidget(self.custom_agg_combo)
+        custom_agg_layout.addWidget(self.custom_agg_column_combo)
+        custom_agg_layout.addWidget(self.custom_agg_alias)
+        custom_agg_layout.addWidget(self.add_custom_agg_btn)
+
+        aggregations_layout.addLayout(custom_agg_layout)
+        vbox.addWidget(aggregations_group)
+
+        # Обработчики изменения типа группировки
+        self.grouping_type_radio_simple.toggled.connect(self.update_grouping_ui)
+        self.grouping_type_radio_rollup.toggled.connect(self.update_grouping_ui)
+        self.grouping_type_radio_cube.toggled.connect(self.update_grouping_ui)
+        self.grouping_type_radio_sets.toggled.connect(self.update_grouping_ui)
+
+        vbox.addStretch()
+        return tab
+
+    def select_all_grouping_columns(self):
+        """Выбирает все колонки в списке группировки"""
+        for i in range(self.grouping_columns_list.count()):
+            item = self.grouping_columns_list.item(i)
+            item.setSelected(True)
+
+    def deselect_all_grouping_columns(self):
+        """Снимает выделение со всех колонок в списке группировки"""
+        for i in range(self.grouping_columns_list.count()):
+            item = self.grouping_columns_list.item(i)
+            item.setSelected(False)
+
+    def update_grouping_ui(self):
+        """Обновляет видимость элементов в зависимости от выбранного типа группировки"""
+        if self.grouping_type_radio_rollup.isChecked():
+            self.grouping_levels_group.setVisible(True)
+            self.grouping_sets_group.setVisible(False)
+        elif self.grouping_type_radio_sets.isChecked():
+            self.grouping_levels_group.setVisible(False)
+            self.grouping_sets_group.setVisible(True)
+        else:
+            self.grouping_levels_group.setVisible(False)
+            self.grouping_sets_group.setVisible(False)
+
+    def add_custom_aggregation(self):
+        """Добавляет пользовательскую агрегатную функцию"""
+        func = self.custom_agg_combo.currentText()
+        column = self.custom_agg_column_combo.currentText()
+        alias = self.custom_agg_alias.text().strip()
+
+        if not alias:
+            alias = f"{func.lower()}_{column}"
+
+        agg_text = f"{func}({column}) as {alias}"
+
+        # Проверяем, нет ли уже такой функции
+        for i in range(self.aggregation_functions_list.count()):
+            item = self.aggregation_functions_list.item(i)
+            if item.text() == agg_text:
+                return
+
+        self.aggregation_functions_list.addItem(agg_text)
+        self.custom_agg_alias.clear()
 
     def get_all_tables_columns(self) -> dict:
         tables_columns = {}
@@ -903,3 +1091,14 @@ class SQLFilterDialog(QDialog):
             self.join_type_combo.setCurrentIndex(0)
         if hasattr(self, "join_table_combo"):
             self.join_table_combo.setCurrentIndex(0)
+        # Сброс настроек расширенной группировки
+        if hasattr(self, "grouping_columns_list"):
+            for i in range(self.grouping_columns_list.count()):
+                item = self.grouping_columns_list.item(i)
+                item.setSelected(False)
+        if hasattr(self, "aggregation_functions_list"):
+            self.aggregation_functions_list.clearSelection()
+        if hasattr(self, "grouping_sets_text"):
+            self.grouping_sets_text.clear()
+        if hasattr(self, "grouping_type_radio_simple"):
+            self.grouping_type_radio_simple.setChecked(True)

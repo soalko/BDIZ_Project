@@ -103,6 +103,7 @@ class AircraftAddWindow(AddWindow):
                 for column_name, widget in self.input_widgets.items():
                     if isinstance(widget, QSpinBox):
                         if column_name == 'year':
+                            widget.setValue(2020)
                             current_year = QDate.currentDate().year()
                             widget.setMaximum(current_year)
                         elif column_name == 'seats_amount':
@@ -127,6 +128,9 @@ class AircraftAddWindow(AddWindow):
             # Получаем данные из автоматически созданной формы
             form_data = self.get_form_data()
 
+            # ОТЛАДКА: выводим какие данные будут сохранены
+            print(f"Данные для сохранения в aircraft: {form_data}")
+
             # Валидация данных
             errors = self.validate_form_data(form_data)
 
@@ -137,7 +141,7 @@ class AircraftAddWindow(AddWindow):
 
             year = form_data.get('year', 0)
             if year < 2000 or year > QDate.currentDate().year():
-                errors.append(f"Год выпуска должен быть между 2000 и {QDate.currentDate().year()}")
+                errors.append(f"ФУУУУ Старье\n Год выпуска должен быть между 2000 и {QDate.currentDate().year()}")
 
             seats = form_data.get('seats_amount', 0)
             if seats < 1 or seats > 1000:

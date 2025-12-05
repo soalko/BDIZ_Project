@@ -94,7 +94,6 @@ class AddWindow(QWidget):
         except Exception as e:
             print(f"Ошибка при обновлении комбобокса {column_name}: {e}")
 
-
     def create_form_from_table_structure(self):
         """Автоматически создает поля формы на основе структуры таблицы"""
         # Очищаем существующую форму
@@ -114,8 +113,12 @@ class AddWindow(QWidget):
             is_primary_key = column_info['primary_key']
             is_nullable = column_info['nullable']
 
-            # Пропускаем автоинкрементные первичные ключи
-            if is_primary_key and self._is_auto_increment(column_type):
+            # ИЗМЕНЕНИЕ: Пропускаем ВСЕ первичные ключи, а не только автоинкрементные
+            if is_primary_key:
+                continue
+
+            # Пропускаем автоинкрементные столбцы (дополнительная проверка)
+            if self._is_auto_increment(column_type):
                 continue
 
             # Создаем подпись с информацией о типе и ограничениях
@@ -128,6 +131,61 @@ class AddWindow(QWidget):
             self.input_widgets[column_name] = input_widget
 
             self.add_form_layout.addRow(label, input_widget)
+
+    def _is_auto_increment(self, column_type: str) -> bool:
+        """Проверяет, является ли тип данных автоинкрементным"""
+        type_lower = column_type.lower()
+        return any(inc_type in type_lower for inc_type in ['serial', 'identity', 'auto_increment', 'nextval'])
+
+    def get_table_columns_info(self) -> List[Dict[str, Any]]:
+        """Получает информацию о столбцах таблицы (может быть переопределен в дочерних классах)"""
+        try:
+            inspector = inspect(self.engine)
+            columns_info = []
+
+            for column in inspector.get_columns(self.table):
+                column_info = {
+                    'name': column['name'],
+                    'type': str(column['type']),
+                    'nullable': column['nullable'],
+                    'default': column.get('default'),
+                    'primary_key': False,
+                    'foreign_key': None,
+                    'autoincrement': column.get('autoincrement', False)
+                }
+
+                # Проверяем, является ли столбец первичным ключом
+                pk_constraint = inspector.get_pk_constraint(self.table)
+                if pk_constraint and column['name'] in pk_constraint['constrained_columns']:
+                    column_info['primary_key'] = True
+
+                # Дополнительная проверка на автоинкремент через default
+                if column_info['default'] and 'nextval' in str(column_info['default']):
+                    column_info['autoincrement'] = True
+
+                # Проверяем внешние ключи
+                foreign_keys = inspector.get_foreign_keys(self.table)
+                for fk in foreign_keys:
+                    if column['name'] in fk['constrained_columns']:
+                        column_info['foreign_key'] = {
+                            'referenced_table': fk['referred_table'],
+                            'referenced_column': fk['referred_columns'][0] if fk['referred_columns'] else None
+                        }
+                        break
+
+                columns_info.append(column_info)
+
+            # ДОПОЛНИТЕЛЬНАЯ ОТЛАДКА: выводим информацию о столбцах
+            print(f"Столбцы таблицы {self.table}:")
+            for col in columns_info:
+                pk_status = "PK" if col['primary_key'] else "  "
+                ai_status = "AI" if col['autoincrement'] else "  "
+                print(f"  {pk_status} {ai_status} {col['name']} ({col['type']})")
+
+            return columns_info
+        except Exception as e:
+            print(f"Ошибка при получении информации о столбцах: {e}")
+            return []
 
     def _is_auto_increment(self, column_type: str) -> bool:
         """Проверяет, является ли тип данных автоинкрементным"""
@@ -369,10 +427,15 @@ class AddWindow(QWidget):
             column_name = column_info['name']
             column_type = column_info['type']
             is_nullable = column_info['nullable']
+            is_primary_key = column_info['primary_key']
             value = form_data.get(column_name)
 
-            # Пропускаем автоинкрементные первичные ключи
-            if column_info['primary_key'] and self._is_auto_increment(column_type):
+            # ИЗМЕНЕНИЕ: Пропускаем первичные ключи при валидации
+            if is_primary_key:
+                continue
+
+            # Пропускаем автоинкрементные столбцы
+            if self._is_auto_increment(column_type):
                 continue
 
             # Проверка на обязательность
@@ -438,7 +501,19 @@ class AddWindow(QWidget):
     def get_form_data(self) -> Dict[str, Any]:
         """Получает данные из формы с базовой валидацией"""
         data = {}
+        columns_info = self.get_table_columns_info()
+
+        # Создаем список столбцов, которые нужно исключить (PK и автоинкрементные)
+        excluded_columns = []
+        for column_info in columns_info:
+            if column_info['primary_key'] or self._is_auto_increment(column_info['type']):
+                excluded_columns.append(column_info['name'])
+
         for column_name, widget in self.input_widgets.items():
+            # ИЗМЕНЕНИЕ: Пропускаем исключенные столбцы
+            if column_name in excluded_columns:
+                continue
+
             try:
                 if isinstance(widget, QLineEdit):
                     value = widget.text().strip()
