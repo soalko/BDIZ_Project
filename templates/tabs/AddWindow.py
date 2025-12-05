@@ -2,17 +2,21 @@ import re
 from datetime import date
 from typing import List, Dict, Any
 
-from PySide6.QtCore import QDate, QTime, QDateTime
+from PySide6.QtCore import QDate, QTime, QDateTime, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QCheckBox,
     QPushButton, QFormLayout, QTableView,
-    QComboBox, QLineEdit, QDialog,
-    QLabel, QTabWidget, QTextEdit,
-    QGroupBox, QHBoxLayout, QDialogButtonBox,
-    QMessageBox, QScrollArea, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit, QDateTimeEdit
+    QComboBox, QLineEdit, QLabel,
+    QHBoxLayout, QHeaderView, QMessageBox,
+    QScrollArea, QSpinBox, QDoubleSpinBox,
+    QDateEdit, QTimeEdit, QDateTimeEdit
 )
 
+from styles.styles import apply_compact_table_view
+
 from sqlalchemy import text, inspect
+
+from db.models import SATableModel
 
 
 class ValidationError(Exception):
@@ -65,7 +69,31 @@ class AddWindow(QWidget):
 
         layout.addStretch()
 
+        self.model = SATableModel(self.engine, self.tables[self.table], self)
+        self.proxy_model = QSortFilterProxyModel()
+        self.setup_add_ui()
+
         self.connect_buttons()
+
+    def setup_add_ui(self):
+        self.proxy_model.setSourceModel(self.model)
+        self.add_table.setModel(self.proxy_model)
+        self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.add_table)
+        self.add_table.setSortingEnabled(True)
+
+        header = self.add_table.horizontalHeader()
+        header.setSectionsClickable(True)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
+
+        header.sectionClicked.connect(self.on_header_clicked)
+
+    def on_header_clicked(self, logical_index):
+        current_order = self.proxy_model.sortOrder()
+        new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
+        self.proxy_model.sort(logical_index, new_order)
 
     def showEvent(self, event):
         """Вызывается при каждом показе окна"""
@@ -112,7 +140,6 @@ class AddWindow(QWidget):
             column_name = column_info['name']
             column_type = column_info['type']
             is_primary_key = column_info['primary_key']
-            is_nullable = column_info['nullable']
 
             # Пропускаем автоинкрементные первичные ключи
             if is_primary_key and self._is_auto_increment(column_type):
@@ -245,7 +272,7 @@ class AddWindow(QWidget):
 
                 for row in result:
                     # Создаем читаемое отображение
-                    display_text = self._create_display_text(row, referenced_table)
+                    display_text = self._create_display_text(row)
                     combo.addItem(display_text, row[0])  # row[0] - значение первичного ключа
 
             # Восстанавливаем предыдущее выбранное значение, если оно еще существует
@@ -266,11 +293,10 @@ class AddWindow(QWidget):
             pk_constraint = inspector.get_pk_constraint(table_name)
             if pk_constraint and pk_constraint['constrained_columns']:
                 return pk_constraint['constrained_columns'][0]
-            return "id"  # fallback
-        except:
+        finally:
             return "id"
 
-    def _create_display_text(self, row, table_name: str) -> str:
+    def _create_display_text(self, row) -> str:
         """Создает читаемый текст для отображения в ComboBox"""
         # Пытаемся найти столбец с именем или описанием
         for col_name, value in row._mapping.items():
@@ -383,13 +409,13 @@ class AddWindow(QWidget):
             # Проверка типов данных
             if value is not None and value != '':
                 try:
-                    self._validate_column_value(column_name, value, column_type, column_info)
+                    self._validate_column_value(column_name, value, column_type)
                 except ValidationError as e:
                     errors.append(str(e))
 
         return errors
 
-    def _validate_column_value(self, column_name: str, value: Any, column_type: str, column_info: Dict[str, Any]):
+    def _validate_column_value(self, column_name: str, value: Any, column_type: str):
         """Валидирует значение для конкретного столбца"""
         type_lower = column_type.lower()
 

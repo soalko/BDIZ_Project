@@ -1,18 +1,17 @@
 import re
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QCheckBox,
-    QPushButton, QFormLayout, QTableView,
-    QComboBox, QLineEdit, QDialog,
-    QLabel, QTabWidget, QTextEdit,
-    QGroupBox, QHBoxLayout, QDialogButtonBox,
-    QMessageBox, QScrollArea, QHeaderView
+    QWidget, QVBoxLayout, QPushButton,
+    QTableView, QDialog, QHBoxLayout,
+    QMessageBox, QHeaderView
 )
 
 from typing import List
 from sqlalchemy import text
 
 from templates.tabs.SQLFilterDialog import SQLFilterDialog
+from templates.tabs.ViewWindow import ViewWindow
+from templates.tabs.CTEWindow import CTEWindow
 
 
 class ValidationError(Exception):
@@ -35,8 +34,8 @@ except ImportError:
             header = table_widget.horizontalHeader()
             header.setStretchLastSection(True)
             header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
 
 
 class ReadWindow(QWidget):
@@ -49,10 +48,31 @@ class ReadWindow(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # кнопка фильтрации для режима чтения
-        self.filter_button = QPushButton("Фильтрация")
+        self.buttons_panel = QWidget()
+        self.buttons_layout = QHBoxLayout(self.buttons_panel)
+        self.buttons_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Кнопка фильтрации
+        self.filter_button = QPushButton("Фильтрация SQL")
         self.filter_button.clicked.connect(self.open_filter_dialog)
-        layout.addWidget(self.filter_button)
+
+        # Кнопка VIEW запросов
+        self.view_button = QPushButton("VIEW запросы")
+        self.view_button.clicked.connect(self.open_view_dialog)
+
+        self.cte_button = QPushButton("Конструктор CTE")
+        self.cte_button.clicked.connect(self.open_cte_dialog)
+
+        self.buttons_layout.addWidget(self.filter_button)
+        self.buttons_layout.addWidget(self.view_button)
+        self.buttons_layout.addWidget(self.cte_button)
+        self.buttons_layout.addStretch()
+
+        self.buttons_layout.addWidget(self.filter_button)
+        self.buttons_layout.addWidget(self.view_button)
+        self.buttons_layout.addStretch()
+
+        layout.addWidget(self.buttons_panel)
 
         self.read_table = QTableView()
         layout.addWidget(self.read_table)
@@ -77,6 +97,22 @@ class ReadWindow(QWidget):
         dialog = SQLFilterDialog(self, self.table)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.get_filters(dialog)
+
+    def open_view_dialog(self):
+        """Открывает диалог работы с VIEW"""
+        dialog = ViewWindow(self.engine, self.table, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            view_query = dialog.get_view_query()
+            if view_query:
+                self.execute_sql_query(view_query)
+
+    def open_cte_dialog(self):
+        """Открывает конструктор Common Table Expressions"""
+        dialog = CTEWindow(self.engine, self.table, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            cte_query = dialog.get_cte_query()
+            if cte_query:
+                self.execute_sql_query(cte_query)
 
     def setup_read_table(self):
         """Настройка таблицы для режима чтения"""
@@ -107,12 +143,6 @@ class ReadWindow(QWidget):
         layout.addWidget(self.read_table)
 
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addStretch()
-
-    def open_filter_dialog(self):
-        dialog = SQLFilterDialog(self, self.table)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            self.get_filters(dialog)
 
     def get_filters(self, dialog):
         try:

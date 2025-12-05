@@ -1,14 +1,9 @@
-# ===== Base =====
-from datetime import date, time
-
 # ===== PySide6 =====
-from PySide6.QtCore import QDate, QTime, QSortFilterProxyModel, Qt
+from PySide6.QtCore import QDate, QTime, Qt
 from PySide6.QtWidgets import (
-    QLineEdit, QMessageBox, QSpinBox,
-    QDateEdit, QComboBox, QTableView,
-    QTimeEdit, QHeaderView
+    QMessageBox, QSpinBox,
+    QDateEdit, QTimeEdit
 )
-from styles.styles import apply_compact_table_view
 
 # ===== SQLAlchemy =====
 from sqlalchemy import (
@@ -22,7 +17,6 @@ from db.models import SATableModel
 from templates.tabs.AddWindow import AddWindow
 from templates.tabs.BaseTab import BaseTab
 from templates.tabs.EditWindow import EditWindow
-from templates.tabs.ReadWindow import ReadWindow
 
 
 # -------------------------------
@@ -39,22 +33,6 @@ class FlightsTab(BaseTab):
         return FlightsAddWindow(self.engine, self.tables, self.table, self)
 
 
-class FlightsReadWindow(ReadWindow):
-    def __init__(self, engine, tables, table, parent=None):
-        super().__init__(engine, tables, table, parent)
-        self.setup_flights_ui()
-
-    def setup_flights_ui(self):
-        from db.models import SATableModel
-        self.model = SATableModel(self.engine, self.tables[self.table], self)
-
-        self.read_table.setModel(self.model)
-        self.read_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-        self.read_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
-        apply_compact_table_view(self.read_table)
-        self.read_table.setSortingEnabled(True)
-
-
 class FlightsEditWindow(EditWindow):
     def __init__(self, engine, tables, table, parent=None):
         super().__init__(engine, tables, table, parent)
@@ -64,25 +42,6 @@ class FlightsEditWindow(EditWindow):
 class FlightsAddWindow(AddWindow):
     def __init__(self, engine, tables, table, parent=None):
         super().__init__(engine, tables, table, parent)
-        self.model = SATableModel(self.engine, self.tables[self.table], self)
-        self.setup_flights_ui()
-
-    def setup_flights_ui(self):
-        # Настраиваем прокси-модель для сортировки
-        self.proxy_model = QSortFilterProxyModel()
-        self.proxy_model.setSourceModel(self.model)
-        self.add_table.setModel(self.proxy_model)
-        self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-        self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
-        apply_compact_table_view(self.add_table)
-        self.add_table.setSortingEnabled(True)
-
-        header = self.add_table.horizontalHeader()
-        header.setSectionsClickable(True)
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
-
-        header.sectionClicked.connect(self.on_header_clicked)
 
     def refresh_form_widgets(self):
         """Обновляет виджеты формы при каждом открытии вкладки"""
@@ -99,7 +58,6 @@ class FlightsAddWindow(AddWindow):
         """Обновляет значения в виджетах"""
         try:
             current_date = QDate.currentDate()
-            current_time = QTime.currentTime()
 
             if hasattr(self, 'input_widgets'):
                 for column_name, widget in self.input_widgets.items():
@@ -127,12 +85,6 @@ class FlightsAddWindow(AddWindow):
         # Базовая форма создается автоматически в родительском классе
         # Здесь можно добавить дополнительные поля или кастомную логику
         pass
-
-    def _qdate_to_pydate(self, qd: QDate) -> date:
-        return date(qd.year(), qd.month(), qd.day())
-
-    def _qtime_to_pytime(self, qt: QTime) -> time:
-        return time(qt.hour(), qt.minute())
 
     def add_flight(self):
         # Получаем данные из автоматически созданной формы
