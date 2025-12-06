@@ -82,29 +82,21 @@ class ReadWindow(QWidget):
         self.cte_button = QPushButton("Конструктор CTE")
         self.cte_button.clicked.connect(self.open_cte_dialog)
 
-        self.buttons_layout.addWidget(self.filter_button)
-        self.buttons_layout.addWidget(self.view_button)
-        self.buttons_layout.addWidget(self.cte_button)
-        self.buttons_layout.addStretch()
+        self.create_view_btn = QPushButton("Создать представление")
+        self.create_view_btn.clicked.connect(self.create_view_from_current)
+        self.create_view_btn.setEnabled(False)
 
         self.buttons_layout.addWidget(self.filter_button)
         self.buttons_layout.addWidget(self.view_button)
+        self.buttons_layout.addWidget(self.cte_button)
+        self.buttons_layout.addWidget(self.filter_button)
+        self.buttons_layout.addWidget(self.create_view_btn)
+
         self.buttons_layout.addStretch()
 
         layout.addWidget(self.buttons_panel)
 
-        # Кнопка управления представлениями
-        self.views_btn = QPushButton("Представления")
-        self.views_btn.clicked.connect(self.show_views_manager)
-        self.views_btn.setFixedWidth(350)
-        self.buttons_layout.addWidget(self.views_btn)
-
         # Кнопка создания представления из текущего запроса
-        self.create_view_btn = QPushButton("Создать представление")
-        self.create_view_btn.clicked.connect(self.create_view_from_current)
-        self.create_view_btn.setFixedWidth(350)
-        self.create_view_btn.setEnabled(False)
-        self.buttons_layout.addWidget(self.create_view_btn)
 
         self.top_panel.addStretch()
         layout.addLayout(self.top_panel)
