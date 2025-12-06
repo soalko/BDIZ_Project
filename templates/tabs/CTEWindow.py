@@ -248,10 +248,11 @@ class CTEWindow(QDialog):
         if not table_name:
             return
 
-        # Очищаем текущие чекбоксы
-        for checkbox in self.column_checkboxes.values():
-            checkbox.setParent(None)
-        self.column_checkboxes.clear()
+        if hasattr(self, 'column_checkboxes'):
+            # Очищаем текущие чекбоксы
+            for checkbox in self.column_checkboxes.values():
+                checkbox.setParent(None)
+            self.column_checkboxes.clear()
 
         try:
             with self.engine.connect() as conn:

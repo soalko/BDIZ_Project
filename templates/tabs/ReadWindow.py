@@ -17,6 +17,8 @@ from typing import List
 from sqlalchemy import text, inspect
 
 from templates.tabs.SQLFilterDialog import SQLFilterDialog
+from templates.tabs.ViewWindow import ViewWindow
+from templates.tabs.CTEWindow import CTEWindow
 
 
 class ValidationError(Exception):
@@ -64,24 +66,45 @@ class ReadWindow(QWidget):
         self.top_panel = QHBoxLayout()
 
         # Кнопка фильтрации
-        self.filter_button = QPushButton("Фильтрация")
-        self.filter_button.clicked.connect(self.open_filter_dialog)
-        self.filter_button.setFixedWidth(350)
-        self.top_panel.addWidget(self.filter_button)
 
+        self.buttons_panel = QWidget()
+        self.buttons_layout = QHBoxLayout(self.buttons_panel)
+        self.buttons_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Кнопка фильтрации
+        self.filter_button = QPushButton("Фильтрация SQL")
+        self.filter_button.clicked.connect(self.open_filter_dialog)
+
+        # Кнопка VIEW запросов
+        self.view_button = QPushButton("VIEW запросы")
+        self.view_button.clicked.connect(self.open_view_dialog)
+
+        self.cte_button = QPushButton("Конструктор CTE")
+        self.cte_button.clicked.connect(self.open_cte_dialog)
+
+        self.buttons_layout.addWidget(self.filter_button)
+        self.buttons_layout.addWidget(self.view_button)
+        self.buttons_layout.addWidget(self.cte_button)
+        self.buttons_layout.addStretch()
+
+        self.buttons_layout.addWidget(self.filter_button)
+        self.buttons_layout.addWidget(self.view_button)
+        self.buttons_layout.addStretch()
+
+        layout.addWidget(self.buttons_panel)
 
         # Кнопка управления представлениями
         self.views_btn = QPushButton("Представления")
         self.views_btn.clicked.connect(self.show_views_manager)
         self.views_btn.setFixedWidth(350)
-        self.top_panel.addWidget(self.views_btn)
+        self.buttons_layout.addWidget(self.views_btn)
 
         # Кнопка создания представления из текущего запроса
         self.create_view_btn = QPushButton("Создать представление")
         self.create_view_btn.clicked.connect(self.create_view_from_current)
         self.create_view_btn.setFixedWidth(350)
         self.create_view_btn.setEnabled(False)
-        self.top_panel.addWidget(self.create_view_btn)
+        self.buttons_layout.addWidget(self.create_view_btn)
 
         self.top_panel.addStretch()
         layout.addLayout(self.top_panel)
@@ -125,6 +148,22 @@ class ReadWindow(QWidget):
         dialog = SQLFilterDialog(self, self.table)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.get_filters(dialog)
+
+    def open_view_dialog(self):
+        """Открывает диалог работы с VIEW"""
+        dialog = ViewWindow(self.engine, self.table, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            view_query = dialog.get_view_query()
+            if view_query:
+                self.execute_sql_query(view_query)
+
+    def open_cte_dialog(self):
+        """Открывает конструктор Common Table Expressions"""
+        dialog = CTEWindow(self.engine, self.table, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            cte_query = dialog.get_cte_query()
+            if cte_query:
+                self.execute_sql_query(cte_query)
 
     def get_filters(self, dialog):
         try:
