@@ -9,11 +9,11 @@ from PySide6.QtWidgets import (
     QMessageBox, QScrollArea, QHeaderView,
     QMenu, QInputDialog, QSplitter,
     QListWidget, QListWidgetItem, QTableWidget,
-    QTableWidgetItem
+    QTableWidgetItem, QSpinBox
 )
 
 from PySide6.QtCore import Qt, Signal
-from typing import List
+from typing import List, Tuple, Optional
 from sqlalchemy import text, inspect
 
 from templates.tabs.SQLFilterDialog import SQLFilterDialog
@@ -45,6 +45,334 @@ except ImportError:
             pass
 
 
+class WindowFunctionDialog(QDialog):
+    """Диалог для настройки оконных функций"""
+
+    def __init__(self, table_name: str, columns: List[str], parent=None):
+        super().__init__(parent)
+        self.table_name = table_name
+        self.columns = columns
+        self.window_functions = []
+
+        self.setWindowTitle("Оконные функции")
+        self.setMinimumSize(600, 500)
+        self.setup_ui()
+
+    def setup_ui(self):
+        # Создаем основной layout
+        main_layout = QVBoxLayout(self)
+
+        # Создаем QScrollArea
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # Важно: содержимое будет растягиваться
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        # Создаем основной виджет для содержимого
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
+
+        # Основной сплиттер
+        splitter = QSplitter(Qt.Vertical)
+
+        # Верхняя часть - настройки функций
+        config_widget = QWidget()
+        config_layout = QVBoxLayout(config_widget)
+
+        # Группа для выбора типа функции
+        function_group = QGroupBox("Тип оконной функции")
+        function_layout = QVBoxLayout(function_group)
+
+        self.function_type_combo = QComboBox()
+        self.function_type_combo.addItems(["RANK", "LAG", "LEAD"])
+        self.function_type_combo.currentTextChanged.connect(self.on_function_type_changed)
+        function_layout.addWidget(QLabel("Функция:"))
+        function_layout.addWidget(self.function_type_combo)
+
+        config_layout.addWidget(function_group)
+
+        # Группа для параметров функции
+        self.params_group = QGroupBox("Параметры функции")
+        self.params_layout = QVBoxLayout(self.params_group)
+
+        # Для всех функций: выбор колонки для функции
+        column_layout = QHBoxLayout()
+        column_layout.addWidget(QLabel("Колонка:"))
+        self.column_combo = QComboBox()
+        self.column_combo.addItems(self.columns)
+        column_layout.addWidget(self.column_combo)
+        self.params_layout.addLayout(column_layout)
+
+        # Алиас для функции
+        alias_layout = QHBoxLayout()
+        alias_layout.addWidget(QLabel("Алиас:"))
+        self.alias_edit = QLineEdit()
+        self.alias_edit.setPlaceholderText("rank_col")
+        alias_layout.addWidget(self.alias_edit)
+        self.params_layout.addLayout(alias_layout)
+
+        # Специфичные параметры для LAG/LEAD
+        self.offset_layout = QHBoxLayout()
+        self.offset_layout.addWidget(QLabel("Смещение:"))
+        self.offset_spin = QSpinBox()
+        self.offset_spin.setMinimum(1)
+        self.offset_spin.setMaximum(100)
+        self.offset_spin.setValue(1)
+        self.offset_layout.addWidget(self.offset_spin)
+        self.offset_layout.addWidget(QLabel("Значение по умолчанию:"))
+        self.default_value_edit = QLineEdit()
+        self.default_value_edit.setPlaceholderText("NULL")
+        self.offset_layout.addWidget(self.default_value_edit)
+        self.params_layout.addLayout(self.offset_layout)
+
+        config_layout.addWidget(self.params_group)
+
+        # Параметры для сортировки (ORDER BY)
+        order_group = QGroupBox("ORDER BY (обязательно для оконных функций)")
+        order_layout = QVBoxLayout(order_group)
+
+        # Выбор колонок для сортировки
+        self.order_columns_list = QListWidget()
+        self.order_columns_list.setSelectionMode(QListWidget.MultiSelection)
+        self.order_columns_list.setMaximumHeight(150)  # Ограничиваем высоту списка
+        for col in self.columns:
+            self.order_columns_list.addItem(col)
+
+        # Прокрутка для списка колонок внутри группы
+        order_scroll_area = QScrollArea()
+        order_scroll_area.setWidgetResizable(True)
+        order_scroll_area.setMaximumHeight(120)
+        order_scroll_area.setWidget(self.order_columns_list)
+
+        order_layout.addWidget(QLabel("Колонки для сортировки:"))
+        order_layout.addWidget(order_scroll_area)
+
+        # Направление сортировки для выбранных колонок
+        order_direction_layout = QHBoxLayout()
+        order_direction_layout.addWidget(QLabel("Направление сортировки:"))
+        self.order_direction_combo = QComboBox()
+        self.order_direction_combo.addItems(["ASC", "DESC"])
+        order_direction_layout.addWidget(self.order_direction_combo)
+        order_direction_layout.addStretch()
+        order_layout.addLayout(order_direction_layout)
+
+        config_layout.addWidget(order_group)
+
+        # Параметры для разбиения (PARTITION BY) - опционально
+        partition_group = QGroupBox("PARTITION BY (опционально)")
+        partition_layout = QVBoxLayout(partition_group)
+
+        self.partition_columns_list = QListWidget()
+        self.partition_columns_list.setSelectionMode(QListWidget.MultiSelection)
+        self.partition_columns_list.setMaximumHeight(150)  # Ограничиваем высоту списка
+
+        # Прокрутка для списка колонок внутри группы
+        partition_scroll_area = QScrollArea()
+        partition_scroll_area.setWidgetResizable(True)
+        partition_scroll_area.setMaximumHeight(120)
+        partition_scroll_area.setWidget(self.partition_columns_list)
+
+        for col in self.columns:
+            self.partition_columns_list.addItem(col)
+
+        partition_layout.addWidget(QLabel("Колонки для разбиения:"))
+        partition_layout.addWidget(partition_scroll_area)
+
+        config_layout.addWidget(partition_group)
+
+        # Кнопка добавления функции
+        add_button = QPushButton("Добавить функцию")
+        add_button.clicked.connect(self.add_function)
+        config_layout.addWidget(add_button)
+
+        splitter.addWidget(config_widget)
+
+        # Нижняя часть - список добавленных функций
+        list_widget = QWidget()
+        list_layout = QVBoxLayout(list_widget)
+
+        list_layout.addWidget(QLabel("Добавленные оконные функции:"))
+
+        self.functions_table = QTableWidget()
+        self.functions_table.setColumnCount(6)
+        self.functions_table.setHorizontalHeaderLabels([
+            "Тип", "Колонка", "Алиас", "Смещение", "ORDER BY", "PARTITION BY"
+        ])
+        self.functions_table.horizontalHeader().setStretchLastSection(True)
+        self.functions_table.setMaximumHeight(200)  # Ограничиваем высоту таблицы
+
+        # Прокрутка для таблицы функций
+        table_scroll_area = QScrollArea()
+        table_scroll_area.setWidgetResizable(True)
+        table_scroll_area.setWidget(self.functions_table)
+
+        list_layout.addWidget(table_scroll_area)
+
+        # Кнопки управления списком
+        buttons_layout = QHBoxLayout()
+        remove_button = QPushButton("Удалить выбранную")
+        remove_button.clicked.connect(self.remove_function)
+        clear_button = QPushButton("Очистить все")
+        clear_button.clicked.connect(self.clear_functions)
+        buttons_layout.addWidget(remove_button)
+        buttons_layout.addWidget(clear_button)
+        buttons_layout.addStretch()
+        list_layout.addLayout(buttons_layout)
+
+        splitter.addWidget(list_widget)
+
+        layout.addWidget(splitter)
+        splitter.setSizes([400, 250])  # Увеличиваем размер верхней части
+
+        # Устанавливаем контентный виджет в scroll area
+        scroll_area.setWidget(content_widget)
+
+        # Добавляем scroll area в основной layout
+        main_layout.addWidget(scroll_area)
+
+        # Кнопки диалога
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        )
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        main_layout.addWidget(button_box)
+
+        # Инициализация видимости элементов
+        self.on_function_type_changed("RANK")
+
+    def on_function_type_changed(self, function_type: str):
+        """Обновляет видимость элементов в зависимости от типа функции"""
+        # Находим родительский виджет для offset_layout
+        if hasattr(self, 'offset_widget'):
+            # Если уже создан виджет-контейнер
+            if function_type == "RANK":
+                self.offset_widget.setVisible(False)
+            else:  # LAG или LEAD
+                self.offset_widget.setVisible(True)
+        else:
+            # Или альтернативный подход - скрываем/показываем отдельные элементы
+            for i in range(self.offset_layout.count()):
+                item = self.offset_layout.itemAt(i)
+                if item.widget():
+                    if function_type == "RANK":
+                        item.widget().setVisible(False)
+                    else:
+                        item.widget().setVisible(True)
+
+    def add_function(self):
+        """Добавляет оконную функцию в список"""
+        function_type = self.function_type_combo.currentText()
+        column = self.column_combo.currentText()
+        alias = self.alias_edit.text().strip() or f"{function_type.lower()}_{column}"
+
+        # Получаем ORDER BY колонки
+        order_columns = []
+        for i in range(self.order_columns_list.count()):
+            item = self.order_columns_list.item(i)
+            if item.isSelected():
+                order_columns.append(item.text())
+
+        if not order_columns:
+            QMessageBox.warning(self, "Ошибка",
+                                "Для оконных функций необходимо указать хотя бы одну колонку для ORDER BY")
+            return
+
+        order_by = ", ".join(order_columns)
+        direction = self.order_direction_combo.currentText()
+        if direction == "DESC":
+            order_by = f"{order_by} DESC"
+
+        # Получаем PARTITION BY колонки
+        partition_columns = []
+        for i in range(self.partition_columns_list.count()):
+            item = self.partition_columns_list.item(i)
+            if item.isSelected():
+                partition_columns.append(item.text())
+
+        partition_by = ", ".join(partition_columns) if partition_columns else ""
+
+        # Получаем параметры для LAG/LEAD
+        offset = ""
+        default_value = ""
+        if function_type in ["LAG", "LEAD"]:
+            offset = str(self.offset_spin.value())
+            default_value = self.default_value_edit.text().strip()
+
+        # Добавляем функцию в список
+        self.window_functions.append({
+            'type': function_type,
+            'column': column,
+            'alias': alias,
+            'order_by': order_by,
+            'partition_by': partition_by,
+            'offset': offset,
+            'default_value': default_value
+        })
+
+        self.update_functions_table()
+
+    def update_functions_table(self):
+        """Обновляет таблицу с функциями"""
+        self.functions_table.setRowCount(len(self.window_functions))
+
+        for row, func in enumerate(self.window_functions):
+            self.functions_table.setItem(row, 0, QTableWidgetItem(func['type']))
+            self.functions_table.setItem(row, 1, QTableWidgetItem(func['column']))
+            self.functions_table.setItem(row, 2, QTableWidgetItem(func['alias']))
+            self.functions_table.setItem(row, 3, QTableWidgetItem(func['offset']))
+            self.functions_table.setItem(row, 4, QTableWidgetItem(func['order_by']))
+            self.functions_table.setItem(row, 5, QTableWidgetItem(func['partition_by']))
+
+        self.functions_table.resizeColumnsToContents()
+
+    def remove_function(self):
+        """Удаляет выбранную функцию"""
+        current_row = self.functions_table.currentRow()
+        if current_row >= 0 and current_row < len(self.window_functions):
+            self.window_functions.pop(current_row)
+            self.update_functions_table()
+
+    def clear_functions(self):
+        """Очищает все функции"""
+        self.window_functions = []
+        self.update_functions_table()
+
+    def get_window_functions(self) -> List[dict]:
+        """Возвращает список настроенных оконных функций"""
+        return self.window_functions
+
+    def get_window_functions_sql(self) -> List[Tuple[str, str]]:
+        """Возвращает SQL выражения для оконных функций в формате (выражение, алиас)"""
+        result = []
+
+        for func in self.window_functions:
+            if func['type'] == "RANK":
+                expression = f"RANK()"
+            elif func['type'] == "LAG":
+                expression = f"LAG({func['column']}, {func['offset']}"
+                if func['default_value']:
+                    expression += f", {func['default_value']}"
+                expression += ")"
+            elif func['type'] == "LEAD":
+                expression = f"LEAD({func['column']}, {func['offset']}"
+                if func['default_value']:
+                    expression += f", {func['default_value']}"
+                expression += ")"
+
+            # Добавляем OVER() clause
+            over_parts = []
+            if func['partition_by']:
+                over_parts.append(f"PARTITION BY {func['partition_by']}")
+
+            over_parts.append(f"ORDER BY {func['order_by']}")
+
+            expression += f" OVER ({' '.join(over_parts)})"
+            result.append((expression, func['alias']))
+
+        return result
+
+
 class ReadWindow(QWidget):
     """Окно чтения с расширенными функциями группировки и управления представлениями"""
 
@@ -58,6 +386,7 @@ class ReadWindow(QWidget):
         self.table = table
         self.current_view = None
         self.views_cache = {}
+        self.window_functions = []  # Список оконных функций
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -82,6 +411,10 @@ class ReadWindow(QWidget):
         self.cte_button = QPushButton("Конструктор CTE")
         self.cte_button.clicked.connect(self.open_cte_dialog)
 
+        # Кнопка оконных функций
+        self.window_func_button = QPushButton("Оконные функции")
+        self.window_func_button.clicked.connect(self.open_window_function_dialog)
+
         self.create_view_btn = QPushButton("Создать представление")
         self.create_view_btn.clicked.connect(self.create_view_from_current)
         self.create_view_btn.setEnabled(False)
@@ -89,7 +422,7 @@ class ReadWindow(QWidget):
         self.buttons_layout.addWidget(self.filter_button)
         self.buttons_layout.addWidget(self.view_button)
         self.buttons_layout.addWidget(self.cte_button)
-        self.buttons_layout.addWidget(self.filter_button)
+        self.buttons_layout.addWidget(self.window_func_button)
         self.buttons_layout.addWidget(self.create_view_btn)
 
         self.buttons_layout.addStretch()
@@ -156,6 +489,66 @@ class ReadWindow(QWidget):
             cte_query = dialog.get_cte_query()
             if cte_query:
                 self.execute_sql_query(cte_query)
+
+    def open_window_function_dialog(self):
+        """Открывает диалог для настройки оконных функций"""
+        columns = self.get_table_columns(self.table)
+        dialog = WindowFunctionDialog(self.table, columns, self)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            # Получаем настроенные оконные функции
+            self.window_functions = dialog.get_window_functions_sql()
+
+            if self.window_functions:
+                # Включаем кнопку создания представления
+                self.create_view_btn.setEnabled(True)
+
+                # Строим базовый запрос с оконными функциями
+                sql_query = self.build_sql_with_window_functions()
+                self.current_sql_query = sql_query
+
+                # Показываем информацию о примененных функциях
+                self.show_window_functions_info()
+
+                # Выполняем запрос
+                self.execute_sql_query(sql_query)
+
+    def build_sql_with_window_functions(self) -> str:
+        """Строит SQL запрос с оконными функциями"""
+        # Получаем все колонки таблицы
+        columns = self.get_table_columns(self.table)
+
+        # Строим SELECT часть
+        select_parts = [f"{self.table}.{col}" for col in columns]
+
+        # Добавляем оконные функции
+        for expression, alias in self.window_functions:
+            select_parts.append(f"{expression} AS {alias}")
+
+        # Базовая часть запроса
+        sql_parts = [
+            f"SELECT {', '.join(select_parts)}",
+            f"FROM {self.table}"
+        ]
+
+        return " ".join(sql_parts)
+
+    def show_window_functions_info(self):
+        """Показывает информацию о примененных оконных функциях"""
+        if not self.window_functions:
+            self.grouping_info_panel.setVisible(False)
+            return
+
+        info_text = "<b>Применены оконные функции:</b><br>"
+
+        for expression, alias in self.window_functions:
+            # Извлекаем тип функции из выражения
+            func_type = expression.split('(')[0]
+            info_text += f"• {alias}: {func_type}<br>"
+
+        self.grouping_info_label.setText(info_text)
+        self.grouping_info_panel.setTitle("Оконные функции")
+        self.grouping_info_panel.setVisible(True)
 
     def get_filters(self, dialog):
         try:
@@ -248,12 +641,19 @@ class ReadWindow(QWidget):
                            WHERE table_name = :table_name
                            ORDER BY ordinal_position""")
                     result = conn.execute(query, {'table_name': table_name})
+                else:
+                    # Для других СУБД
+                    query = text(f"SELECT * FROM {table_name} LIMIT 1")
+                    result = conn.execute(query)
+                    columns = result.keys()
+                    return list(columns)
 
                 columns = [row[0] for row in result]
                 return columns
         except Exception as e:
             print(f"Ошибка при получении колонок таблицы {table_name}: {e}")
-            return ["id", "name", "created_at"]
+            # Возвращаем пустой список вместо дефолтных значений
+            return []
 
     def parse_select_columns(self, dialog):
         select_parts = []
@@ -484,6 +884,7 @@ class ReadWindow(QWidget):
                     model.appendRow(row_items)
 
                 self.read_table.setModel(model)
+                self.read_table.setSortingEnabled(True)  # Включаем сортировку
 
         except Exception as e:
             error_message = self._format_sql_error(str(e))
