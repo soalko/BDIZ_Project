@@ -2,17 +2,21 @@ import re
 from datetime import date
 from typing import List, Dict, Any
 
-from PySide6.QtCore import QDate, QTime, QDateTime
+from PySide6.QtCore import QDate, QTime, QDateTime, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QCheckBox,
     QPushButton, QFormLayout, QTableView,
-    QComboBox, QLineEdit, QDialog,
-    QLabel, QTabWidget, QTextEdit,
-    QGroupBox, QHBoxLayout, QDialogButtonBox,
-    QMessageBox, QScrollArea, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit, QDateTimeEdit
+    QComboBox, QLineEdit, QLabel,
+    QHBoxLayout, QHeaderView, QMessageBox,
+    QScrollArea, QSpinBox, QDoubleSpinBox,
+    QDateEdit, QTimeEdit, QDateTimeEdit
 )
 
+from styles.styles import apply_compact_table_view
+
 from sqlalchemy import text, inspect
+
+from db.models import SATableModel
 
 
 class ValidationError(Exception):
@@ -65,7 +69,31 @@ class AddWindow(QWidget):
 
         layout.addStretch()
 
+        self.model = SATableModel(self.engine, self.tables[self.table], self)
+        self.proxy_model = QSortFilterProxyModel()
+        self.setup_add_ui()
+
         self.connect_buttons()
+
+    def setup_add_ui(self):
+        self.proxy_model.setSourceModel(self.model)
+        self.add_table.setModel(self.proxy_model)
+        self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        apply_compact_table_view(self.add_table)
+        self.add_table.setSortingEnabled(True)
+
+        header = self.add_table.horizontalHeader()
+        header.setSectionsClickable(True)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
+
+        header.sectionClicked.connect(self.on_header_clicked)
+
+    def on_header_clicked(self, logical_index):
+        current_order = self.proxy_model.sortOrder()
+        new_order = Qt.SortOrder.DescendingOrder if current_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
+        self.proxy_model.sort(logical_index, new_order)
 
     def showEvent(self, event):
         """Вызывается при каждом показе окна"""
@@ -94,7 +122,6 @@ class AddWindow(QWidget):
         except Exception as e:
             print(f"Ошибка при обновлении комбобокса {column_name}: {e}")
 
-
     def create_form_from_table_structure(self):
         """Автоматически создает поля формы на основе структуры таблицы"""
         # Очищаем существующую форму
@@ -112,10 +139,13 @@ class AddWindow(QWidget):
             column_name = column_info['name']
             column_type = column_info['type']
             is_primary_key = column_info['primary_key']
-            is_nullable = column_info['nullable']
 
-            # Пропускаем автоинкрементные первичные ключи
-            if is_primary_key and self._is_auto_increment(column_type):
+            # ИЗМЕНЕНИЕ: Пропускаем ВСЕ первичные ключи, а не только автоинкрементные
+            if is_primary_key:
+                continue
+
+            # Пропускаем автоинкрементные столбцы (дополнительная проверка)
+            if self._is_auto_increment(column_type):
                 continue
 
             # Создаем подпись с информацией о типе и ограничениях
@@ -128,6 +158,61 @@ class AddWindow(QWidget):
             self.input_widgets[column_name] = input_widget
 
             self.add_form_layout.addRow(label, input_widget)
+
+    def _is_auto_increment(self, column_type: str) -> bool:
+        """Проверяет, является ли тип данных автоинкрементным"""
+        type_lower = column_type.lower()
+        return any(inc_type in type_lower for inc_type in ['serial', 'identity', 'auto_increment', 'nextval'])
+
+    def get_table_columns_info(self) -> List[Dict[str, Any]]:
+        """Получает информацию о столбцах таблицы (может быть переопределен в дочерних классах)"""
+        try:
+            inspector = inspect(self.engine)
+            columns_info = []
+
+            for column in inspector.get_columns(self.table):
+                column_info = {
+                    'name': column['name'],
+                    'type': str(column['type']),
+                    'nullable': column['nullable'],
+                    'default': column.get('default'),
+                    'primary_key': False,
+                    'foreign_key': None,
+                    'autoincrement': column.get('autoincrement', False)
+                }
+
+                # Проверяем, является ли столбец первичным ключом
+                pk_constraint = inspector.get_pk_constraint(self.table)
+                if pk_constraint and column['name'] in pk_constraint['constrained_columns']:
+                    column_info['primary_key'] = True
+
+                # Дополнительная проверка на автоинкремент через default
+                if column_info['default'] and 'nextval' in str(column_info['default']):
+                    column_info['autoincrement'] = True
+
+                # Проверяем внешние ключи
+                foreign_keys = inspector.get_foreign_keys(self.table)
+                for fk in foreign_keys:
+                    if column['name'] in fk['constrained_columns']:
+                        column_info['foreign_key'] = {
+                            'referenced_table': fk['referred_table'],
+                            'referenced_column': fk['referred_columns'][0] if fk['referred_columns'] else None
+                        }
+                        break
+
+                columns_info.append(column_info)
+
+            # ДОПОЛНИТЕЛЬНАЯ ОТЛАДКА: выводим информацию о столбцах
+            print(f"Столбцы таблицы {self.table}:")
+            for col in columns_info:
+                pk_status = "PK" if col['primary_key'] else "  "
+                ai_status = "AI" if col['autoincrement'] else "  "
+                print(f"  {pk_status} {ai_status} {col['name']} ({col['type']})")
+
+            return columns_info
+        except Exception as e:
+            print(f"Ошибка при получении информации о столбцах: {e}")
+            return []
 
     def _is_auto_increment(self, column_type: str) -> bool:
         """Проверяет, является ли тип данных автоинкрементным"""
@@ -245,7 +330,7 @@ class AddWindow(QWidget):
 
                 for row in result:
                     # Создаем читаемое отображение
-                    display_text = self._create_display_text(row, referenced_table)
+                    display_text = self._create_display_text(row)
                     combo.addItem(display_text, row[0])  # row[0] - значение первичного ключа
 
             # Восстанавливаем предыдущее выбранное значение, если оно еще существует
@@ -266,11 +351,10 @@ class AddWindow(QWidget):
             pk_constraint = inspector.get_pk_constraint(table_name)
             if pk_constraint and pk_constraint['constrained_columns']:
                 return pk_constraint['constrained_columns'][0]
-            return "id"  # fallback
-        except:
+        finally:
             return "id"
 
-    def _create_display_text(self, row, table_name: str) -> str:
+    def _create_display_text(self, row) -> str:
         """Создает читаемый текст для отображения в ComboBox"""
         # Пытаемся найти столбец с именем или описанием
         for col_name, value in row._mapping.items():
@@ -369,10 +453,15 @@ class AddWindow(QWidget):
             column_name = column_info['name']
             column_type = column_info['type']
             is_nullable = column_info['nullable']
+            is_primary_key = column_info['primary_key']
             value = form_data.get(column_name)
 
-            # Пропускаем автоинкрементные первичные ключи
-            if column_info['primary_key'] and self._is_auto_increment(column_type):
+            # ИЗМЕНЕНИЕ: Пропускаем первичные ключи при валидации
+            if is_primary_key:
+                continue
+
+            # Пропускаем автоинкрементные столбцы
+            if self._is_auto_increment(column_type):
                 continue
 
             # Проверка на обязательность
@@ -383,13 +472,13 @@ class AddWindow(QWidget):
             # Проверка типов данных
             if value is not None and value != '':
                 try:
-                    self._validate_column_value(column_name, value, column_type, column_info)
+                    self._validate_column_value(column_name, value, column_type)
                 except ValidationError as e:
                     errors.append(str(e))
 
         return errors
 
-    def _validate_column_value(self, column_name: str, value: Any, column_type: str, column_info: Dict[str, Any]):
+    def _validate_column_value(self, column_name: str, value: Any, column_type: str):
         """Валидирует значение для конкретного столбца"""
         type_lower = column_type.lower()
 
@@ -438,7 +527,19 @@ class AddWindow(QWidget):
     def get_form_data(self) -> Dict[str, Any]:
         """Получает данные из формы с базовой валидацией"""
         data = {}
+        columns_info = self.get_table_columns_info()
+
+        # Создаем список столбцов, которые нужно исключить (PK и автоинкрементные)
+        excluded_columns = []
+        for column_info in columns_info:
+            if column_info['primary_key'] or self._is_auto_increment(column_info['type']):
+                excluded_columns.append(column_info['name'])
+
         for column_name, widget in self.input_widgets.items():
+            # ИЗМЕНЕНИЕ: Пропускаем исключенные столбцы
+            if column_name in excluded_columns:
+                continue
+
             try:
                 if isinstance(widget, QLineEdit):
                     value = widget.text().strip()

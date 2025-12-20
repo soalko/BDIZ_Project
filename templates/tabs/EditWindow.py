@@ -2,11 +2,9 @@ import re
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QCheckBox,
-    QPushButton, QFormLayout, QTableView,
-    QComboBox, QLineEdit, QDialog,
-    QLabel, QTabWidget, QTextEdit,
-    QGroupBox, QHBoxLayout, QDialogButtonBox,
-    QMessageBox, QScrollArea
+    QPushButton, QTableView, QComboBox,
+    QLineEdit, QDialog, QLabel,
+    QHBoxLayout, QDialogButtonBox, QMessageBox
 )
 
 from PySide6.QtCore import (Qt)

@@ -1,9 +1,8 @@
 # ===== PySide6 =====
-from PySide6.QtCore import QDate, QSortFilterProxyModel
+from PySide6.QtCore import QDate
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (
-    QLineEdit, QMessageBox,
-    QSpinBox, QTableView, QHeaderView,
+    QMessageBox, QSpinBox,
 )
 
 # ===== SQLAlchemy =====
@@ -14,15 +13,13 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import sys
 import os
 
-from styles import apply_compact_table_view
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from db.models import SATableModel
-from templates.tabs.BaseTab import BaseTab, ReadWindow, EditWindow, AddWindow
+from templates.tabs.BaseTab import BaseTab, EditWindow, AddWindow
 
 
 class ValidationError(Exception):
@@ -47,12 +44,6 @@ class AircraftTab(BaseTab):
     def create_add_window(self):
         return AircraftAddWindow(self.engine, self.tables, self.table, self)
 
-
-class AircraftReadWindow(ReadWindow):
-    def __init__(self, engine, tables, table, parent=None):
-        super().__init__(engine, tables, table, parent)
-
-
 class AircraftEditWindow(EditWindow):
     def __init__(self, engine, tables, table, parent=None):
         super().__init__(engine, tables, table, parent)
@@ -62,27 +53,6 @@ class AircraftEditWindow(EditWindow):
 class AircraftAddWindow(AddWindow):
     def __init__(self, engine, tables, table, parent=None):
         super().__init__(engine, tables, table, parent)
-        self.model = SATableModel(self.engine, self.tables[self.table], self)
-        self.setup_aircraft_ui()
-
-    def setup_aircraft_ui(self):
-        # Настраиваем прокси-модель для сортировки
-        self.proxy_model = QSortFilterProxyModel()
-        self.proxy_model.setSourceModel(self.model)
-        self.add_table.setModel(self.proxy_model)
-        self.add_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-        self.add_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
-        apply_compact_table_view(self.add_table)
-        self.add_table.setSortingEnabled(True)
-
-        # Настраиваем заголовок для сортировки
-        header = self.add_table.horizontalHeader()
-        header.setSectionsClickable(True)
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
-
-        # Подключаем обработчик клика по заголовку
-        header.sectionClicked.connect(self.on_header_clicked)
 
     def refresh_form_widgets(self):
         """Обновляет виджеты формы при каждом открытии вкладки"""
@@ -103,6 +73,7 @@ class AircraftAddWindow(AddWindow):
                 for column_name, widget in self.input_widgets.items():
                     if isinstance(widget, QSpinBox):
                         if column_name == 'year':
+                            widget.setValue(2020)
                             current_year = QDate.currentDate().year()
                             widget.setMaximum(current_year)
                         elif column_name == 'seats_amount':
@@ -127,6 +98,9 @@ class AircraftAddWindow(AddWindow):
             # Получаем данные из автоматически созданной формы
             form_data = self.get_form_data()
 
+            # ОТЛАДКА: выводим какие данные будут сохранены
+            print(f"Данные для сохранения в aircraft: {form_data}")
+
             # Валидация данных
             errors = self.validate_form_data(form_data)
 
@@ -137,7 +111,7 @@ class AircraftAddWindow(AddWindow):
 
             year = form_data.get('year', 0)
             if year < 2000 or year > QDate.currentDate().year():
-                errors.append(f"Год выпуска должен быть между 2000 и {QDate.currentDate().year()}")
+                errors.append(f"ФУУУУ Старье\n Год выпуска должен быть между 2000 и {QDate.currentDate().year()}")
 
             seats = form_data.get('seats_amount', 0)
             if seats < 1 or seats > 1000:
@@ -183,10 +157,12 @@ class AircraftAddWindow(AddWindow):
         source_index = self.proxy_model.mapToSource(idx)
         aircraft_id = self.model.pk_value_at(source_index.row())
 
+        aircraft_table = self.tables["aircraft"]
+
         try:
             with self.engine.begin() as conn:
-                conn.execute(delete(self.tables["aircraft"]).where(
-                    self.tables["aircraft"].c.aircraft_id == aircraft_id
+                conn.execute(delete(aircraft_table).where(
+                    aircraft_table.c.aircraft_id == aircraft_id
                 ))
             self.model.refresh()
 

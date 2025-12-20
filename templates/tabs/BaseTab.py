@@ -1,12 +1,7 @@
 from typing import List, Dict, Any
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QCheckBox,
-    QPushButton, QFormLayout, QTableView,
-    QComboBox, QLineEdit, QDialog,
-    QLabel, QTabWidget, QTextEdit,
-    QGroupBox, QHBoxLayout, QDialogButtonBox,
-    QMessageBox, QScrollArea
+    QWidget, QVBoxLayout, QMessageBox
 )
 
 from sqlalchemy import text, inspect
@@ -64,7 +59,6 @@ class BaseTab(QWidget):
                 self.current_window.refresh_form_widgets()
 
     def create_read_window(self):
-        """Должен быть переопределен в дочерних классах"""
         return ReadWindow(self.engine, self.tables, self.table, self)
 
     def create_edit_window(self):
@@ -72,7 +66,6 @@ class BaseTab(QWidget):
         return EditWindow(self.engine, self.tables, self.table, self)
 
     def create_add_window(self):
-        """Должен быть переопределен в дочерних классах"""
         return AddWindow(self.engine, self.tables, self.table, self)
 
     def update_model(self):
